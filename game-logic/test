@@ -1,0 +1,356 @@
+[0m[[0m[1m[34mINFO[0m] Scanning for projects...[0m
+[0m[[0m[1m[34mINFO[0m] ------------------------------------------------------------------------[0m
+[0m[[0m[1m[34mINFO[0m] Building ScalaSettlers[0m
+[0m[[0m[1m[34mINFO[0m]    task-segment: [test][0m
+[0m[[0m[1m[34mINFO[0m] ------------------------------------------------------------------------[0m
+[0m[[0m[1m[34mINFO[0m] [build-helper:add-source {execution: add-source}][0m
+[0m[[0m[1m[34mINFO[0m] Source directory: /home/john/personal_workspace/Settlers/src/main/scala/**.scala added.[0m
+[0m[[0m[1m[34mINFO[0m] [resources:resources {execution: default-resources}][0m
+[0m[1m[33m[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent![0m
+[0m[[0m[1m[34mINFO[0m] Copying 1 resource[0m
+[0m[[0m[1m[34mINFO[0m] [scala:add-source {execution: scala-compile-first}][0m
+[0m[[0m[1m[34mINFO[0m] Add Source directory: /home/john/personal_workspace/Settlers/src/main/scala[0m
+[0m[[0m[1m[34mINFO[0m] Add Test Source directory: /home/john/personal_workspace/Settlers/src/test/scala[0m
+[0m[1m[33m[WARNING] While downloading jstl:jstl:1.1.2[0m
+[0m  This artifact has been relocated to javax.servlet:jstl:1.1.2.[0m
+[0m
+[0m
+[0m[[0m[1m[34mINFO[0m] [scala:compile {execution: scala-compile-first}][0m
+[0m[1m[31m[ERROR] /home/john/personal_workspace/Settlers/src/main/java[0m
+[0m[1m[31m[ERROR] /home/john/personal_workspace/Settlers/src/main/scala/**.scala[0m
+[0m[1m[31m[ERROR] /home/john/personal_workspace/Settlers/src/main/scala[0m
+[0m[1m[31m[ERROR] /home/john/personal_workspace/Settlers/src/test/scala[0m
+[0m[[0m[1m[34mINFO[0m] Compiling 1 source files to /home/john/personal_workspace/Settlers/target/classes[0m
+[0m[[0m[1m[34mINFO[0m] [compiler:compile {execution: default-compile}][0m
+[0m[[0m[1m[34mINFO[0m] Nothing to compile - all classes are up to date[0m
+[0m[[0m[1m[34mINFO[0m] [compiler:compile {execution: default}][0m
+[0m[[0m[1m[34mINFO[0m] Nothing to compile - all classes are up to date[0m
+[0m[[0m[1m[34mINFO[0m] [resources:testResources {execution: default-testResources}][0m
+[0m[1m[33m[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent![0m
+[0m[[0m[1m[34mINFO[0m] Copying 1 resource[0m
+[0m[[0m[1m[34mINFO[0m] [scala:testCompile {execution: scala-test-compile}][0m
+[0m[1m[31m[ERROR] /home/john/personal_workspace/Settlers/src/test/java[0m
+[0m[1m[31m[ERROR] /home/john/personal_workspace/Settlers/src/test/java/../scala[0m
+[0m[[0m[1m[34mINFO[0m] Compiling 1 source files to /home/john/personal_workspace/Settlers/target/test-classes[0m
+[0m[[0m[1m[34mINFO[0m] [compiler:testCompile {execution: default-testCompile}][0m
+[0m[[0m[1m[34mINFO[0m] No sources to compile[0m
+[0m[[0m[1m[34mINFO[0m] [surefire:test {execution: default-test}][0m
+[0m[[0m[1m[34mINFO[0m] Surefire report directory: /home/john/personal_workspace/Settlers/target/surefire-reports[0m
+[0m
+[0m-------------------------------------------------------[0m
+[0m T E S T S[0m
+[0m-------------------------------------------------------[0m
+[0mRunning GameTest[0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:08,691[0m[1m[33m WARN [IntegrationTest] - java.lang.IllegalStateException: bah [0m
+[0m[1m[31mjava.lang.IllegalStateException: bah[0m
+[0m[31m	at IntegrationTest$class.setup(game_tests.scala:24)[0m
+[0m[31m	at GameTest.setup(game_tests.scala:69)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:45)[0m
+[0m[31m	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:15)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:42)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:27)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:30)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:263)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:68)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:47)[0m
+[0m[31m	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:231)[0m
+[0m[31m	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:60)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:229)[0m
+[0m[31m	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:50)[0m
+[0m[31m	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:222)[0m
+[0m[31m	at org.junit.runners.ParentRunner.run(ParentRunner.java:300)[0m
+[0m[31m	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:62)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.executeTestSet(AbstractDirectoryTestSuite.java:140)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.execute(AbstractDirectoryTestSuite.java:127)[0m
+[0m[31m	at org.apache.maven.surefire.Surefire.run(Surefire.java:177)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.runSuitesInProcess(SurefireBooter.java:345)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.main(SurefireBooter.java:1009)[0m
+[0m2011-10-16[0m[1m[34m 00:43:09,045[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player1" color="red"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,046[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player2" color="brown"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,047[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="1" name="Running" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,047[0m [0m[1m[34mINFO[0m [core.Admin] - Starting Game [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,047[0m [0m[1m[34mINFO[0m [core.Admin] - 2 players [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,149[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="2" name="Finished" /> [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,153[0m[1m[33m WARN [IntegrationTest] - java.lang.IllegalStateException: bah [0m
+[0m[1m[31mjava.lang.IllegalStateException: bah[0m
+[0m[31m	at IntegrationTest$class.setup(game_tests.scala:24)[0m
+[0m[31m	at GameTest.setup(game_tests.scala:69)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:45)[0m
+[0m[31m	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:15)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:42)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:27)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:30)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:263)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:68)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:47)[0m
+[0m[31m	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:231)[0m
+[0m[31m	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:60)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:229)[0m
+[0m[31m	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:50)[0m
+[0m[31m	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:222)[0m
+[0m[31m	at org.junit.runners.ParentRunner.run(ParentRunner.java:300)[0m
+[0m[31m	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:62)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.executeTestSet(AbstractDirectoryTestSuite.java:140)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.execute(AbstractDirectoryTestSuite.java:127)[0m
+[0m[31m	at org.apache.maven.surefire.Surefire.run(Surefire.java:177)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.runSuitesInProcess(SurefireBooter.java:345)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.main(SurefireBooter.java:1009)[0m
+[0m2011-10-16[0m[1m[34m 00:43:09,170[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player1" color="brown"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,170[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player2" color="red"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,170[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="1" name="Running" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,170[0m [0m[1m[34mINFO[0m [core.Admin] - Starting Game [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,170[0m [0m[1m[34mINFO[0m [core.Admin] - 2 players [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,354[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="2" name="Finished" /> [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,355[0m[1m[33m WARN [IntegrationTest] - java.lang.IllegalStateException: bah [0m
+[0m[1m[31mjava.lang.IllegalStateException: bah[0m
+[0m[31m	at IntegrationTest$class.setup(game_tests.scala:24)[0m
+[0m[31m	at GameTest.setup(game_tests.scala:69)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:45)[0m
+[0m[31m	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:15)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:42)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:27)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:30)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:263)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:68)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:47)[0m
+[0m[31m	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:231)[0m
+[0m[31m	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:60)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:229)[0m
+[0m[31m	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:50)[0m
+[0m[31m	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:222)[0m
+[0m[31m	at org.junit.runners.ParentRunner.run(ParentRunner.java:300)[0m
+[0m[31m	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:62)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.executeTestSet(AbstractDirectoryTestSuite.java:140)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.execute(AbstractDirectoryTestSuite.java:127)[0m
+[0m[31m	at org.apache.maven.surefire.Surefire.run(Surefire.java:177)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.runSuitesInProcess(SurefireBooter.java:345)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.main(SurefireBooter.java:1009)[0m
+[0m2011-10-16[0m[1m[34m 00:43:09,356[0m [0m[1m[34mINFO[0m [core.Admin] - Round 1 finished.  Highest Score:2 [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,356[0m[1m[33m WARN [core.Admin] - game is done <state id="2" name="Finished" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,356[0m [0m[1m[34mINFO[0m [core.Admin] - Game Thread done. [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,369[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player1" color="red"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,369[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player2" color="blue"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,369[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="1" name="Running" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,369[0m [0m[1m[34mINFO[0m [core.Admin] - Starting Game [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,369[0m [0m[1m[34mINFO[0m [core.Admin] - 2 players [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,371[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="2" name="Finished" /> [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,371[0m[1m[33m WARN [core.Admin] - TODO: Implement kicking out. core.RuleException: You cannot end a setup turn without placing a road. [0m
+[0m[1m[31mcore.RuleException: You cannot end a setup turn without placing a road.[0m
+[0m[31m	at core.Turn.break_rule(turn.scala:88)[0m
+[0m[31m	at core.Turn$$anonfun$assert_rules$1.apply(turn.scala:350)[0m
+[0m[31m	at core.Turn$$anonfun$assert_rules$1.apply(turn.scala:348)[0m
+[0m[31m	at scala.collection.immutable.Map$Map1.foreach(Map.scala:118)[0m
+[0m[31m	at core.Turn.assert_rules(turn.scala:348)[0m
+[0m[31m	at core.SetupTurn.done(turn.scala:453)[0m
+[0m[31m	at MockPlayer.take_turn(mock_objects.scala:104)[0m
+[0m[31m	at core.TrustedPlayer.take_turn(admin.scala:77)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:575)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:570)[0m
+[0m[31m	at java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:303)[0m
+[0m[31m	at java.util.concurrent.FutureTask.run(FutureTask.java:138)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908)[0m
+[0m[31m	at java.lang.Thread.run(Thread.java:662)[0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,372[0m[1m[33m WARN [core.Admin] - game is done <state id="2" name="Finished" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,372[0m [0m[1m[34mINFO[0m [core.Admin] - Game Thread done. [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,372[0m[1m[33m WARN [IntegrationTest] - java.lang.IllegalStateException: bah [0m
+[0m[1m[31mjava.lang.IllegalStateException: bah[0m
+[0m[31m	at IntegrationTest$class.setup(game_tests.scala:24)[0m
+[0m[31m	at GameTest.setup(game_tests.scala:69)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:45)[0m
+[0m[31m	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:15)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:42)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:27)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:30)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:263)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:68)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:47)[0m
+[0m[31m	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:231)[0m
+[0m[31m	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:60)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:229)[0m
+[0m[31m	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:50)[0m
+[0m[31m	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:222)[0m
+[0m[31m	at org.junit.runners.ParentRunner.run(ParentRunner.java:300)[0m
+[0m[31m	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:62)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.executeTestSet(AbstractDirectoryTestSuite.java:140)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.execute(AbstractDirectoryTestSuite.java:127)[0m
+[0m[31m	at org.apache.maven.surefire.Surefire.run(Surefire.java:177)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.runSuitesInProcess(SurefireBooter.java:345)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.main(SurefireBooter.java:1009)[0m
+[0m2011-10-16[0m[1m[34m 00:43:09,386[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player1" color="white"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,387[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player2" color="blue"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,387[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="1" name="Running" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,387[0m [0m[1m[34mINFO[0m [core.Admin] - Starting Game [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,387[0m [0m[1m[34mINFO[0m [core.Admin] - 2 players [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,388[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="2" name="Finished" /> [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,388[0m[1m[33m WARN [core.Admin] - TODO: Implement kicking out. core.RuleException: You cannot end a setup turn without placing a road. [0m
+[0m[1m[31mcore.RuleException: You cannot end a setup turn without placing a road.[0m
+[0m[31m	at core.Turn.break_rule(turn.scala:88)[0m
+[0m[31m	at core.Turn$$anonfun$assert_rules$1.apply(turn.scala:350)[0m
+[0m[31m	at core.Turn$$anonfun$assert_rules$1.apply(turn.scala:348)[0m
+[0m[31m	at scala.collection.immutable.Map$Map1.foreach(Map.scala:118)[0m
+[0m[31m	at core.Turn.assert_rules(turn.scala:348)[0m
+[0m[31m	at core.SetupTurn.done(turn.scala:453)[0m
+[0m[31m	at MockPlayer.take_turn(mock_objects.scala:104)[0m
+[0m[31m	at core.TrustedPlayer.take_turn(admin.scala:77)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:575)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:570)[0m
+[0m[31m	at java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:303)[0m
+[0m[31m	at java.util.concurrent.FutureTask.run(FutureTask.java:138)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908)[0m
+[0m[31m	at java.lang.Thread.run(Thread.java:662)[0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,388[0m[1m[33m WARN [core.Admin] - game is done <state id="2" name="Finished" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,388[0m [0m[1m[34mINFO[0m [core.Admin] - Game Thread done. [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,389[0m[1m[33m WARN [IntegrationTest] - java.lang.IllegalStateException: bah [0m
+[0m[1m[31mjava.lang.IllegalStateException: bah[0m
+[0m[31m	at IntegrationTest$class.setup(game_tests.scala:24)[0m
+[0m[31m	at GameTest.setup(game_tests.scala:69)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:45)[0m
+[0m[31m	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:15)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:42)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:27)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:30)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:263)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:68)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:47)[0m
+[0m[31m	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:231)[0m
+[0m[31m	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:60)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:229)[0m
+[0m[31m	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:50)[0m
+[0m[31m	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:222)[0m
+[0m[31m	at org.junit.runners.ParentRunner.run(ParentRunner.java:300)[0m
+[0m[31m	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:62)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.executeTestSet(AbstractDirectoryTestSuite.java:140)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.execute(AbstractDirectoryTestSuite.java:127)[0m
+[0m[31m	at org.apache.maven.surefire.Surefire.run(Surefire.java:177)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.runSuitesInProcess(SurefireBooter.java:345)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.main(SurefireBooter.java:1009)[0m
+[0m2011-10-16[0m[1m[34m 00:43:09,403[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player1" color="orange"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,404[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player2" color="white"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,404[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="1" name="Running" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,404[0m [0m[1m[34mINFO[0m [core.Admin] - Starting Game [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,404[0m [0m[1m[34mINFO[0m [core.Admin] - 2 players [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,411[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="2" name="Finished" /> [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,411[0m[1m[33m WARN [core.Admin] - TODO: Implement kicking out. core.RuleException: You cannot end a setup turn without placing a road. [0m
+[0m[1m[31mcore.RuleException: You cannot end a setup turn without placing a road.[0m
+[0m[31m	at core.Turn.break_rule(turn.scala:88)[0m
+[0m[31m	at core.Turn$$anonfun$assert_rules$1.apply(turn.scala:350)[0m
+[0m[31m	at core.Turn$$anonfun$assert_rules$1.apply(turn.scala:348)[0m
+[0m[31m	at scala.collection.immutable.Map$Map2.foreach(Map.scala:139)[0m
+[0m[31m	at core.Turn.assert_rules(turn.scala:348)[0m
+[0m[31m	at core.SetupTurn.done(turn.scala:453)[0m
+[0m[31m	at MockPlayer.take_turn(mock_objects.scala:104)[0m
+[0m[31m	at core.TrustedPlayer.take_turn(admin.scala:77)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:575)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:570)[0m
+[0m[31m	at java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:303)[0m
+[0m[31m	at java.util.concurrent.FutureTask.run(FutureTask.java:138)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908)[0m
+[0m[31m	at java.lang.Thread.run(Thread.java:662)[0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,412[0m[1m[33m WARN [IntegrationTest] - java.lang.IllegalStateException: bah [0m
+[0m[1m[31mjava.lang.IllegalStateException: bah[0m
+[0m[31m	at IntegrationTest$class.setup(game_tests.scala:24)[0m
+[0m[31m	at GameTest.setup(game_tests.scala:69)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:45)[0m
+[0m[31m	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:15)[0m
+[0m[31m	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:42)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:27)[0m
+[0m[31m	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:30)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:263)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:68)[0m
+[0m[31m	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:47)[0m
+[0m[31m	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:231)[0m
+[0m[31m	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:60)[0m
+[0m[31m	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:229)[0m
+[0m[31m	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:50)[0m
+[0m[31m	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:222)[0m
+[0m[31m	at org.junit.runners.ParentRunner.run(ParentRunner.java:300)[0m
+[0m[31m	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:62)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.executeTestSet(AbstractDirectoryTestSuite.java:140)[0m
+[0m[31m	at org.apache.maven.surefire.suite.AbstractDirectoryTestSuite.execute(AbstractDirectoryTestSuite.java:127)[0m
+[0m[31m	at org.apache.maven.surefire.Surefire.run(Surefire.java:177)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)[0m
+[0m[31m	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)[0m
+[0m[31m	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)[0m
+[0m[31m	at java.lang.reflect.Method.invoke(Method.java:597)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.runSuitesInProcess(SurefireBooter.java:345)[0m
+[0m[31m	at org.apache.maven.surefire.booter.SurefireBooter.main(SurefireBooter.java:1009)[0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:09,412[0m[1m[33m WARN [core.Admin] - game is done <state id="2" name="Finished" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,412[0m [0m[1m[34mINFO[0m [core.Admin] - Game Thread done. [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,427[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player1" color="green"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,427[0m [0m[1m[34mINFO[0m [core.Admin] - Player joined: <MockPlayer name="Player2" color="blue"/> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,435[0m [0m[1m[34mINFO[0m [core.Admin] - Game State is changing to <state id="1" name="Running" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,435[0m [0m[1m[34mINFO[0m [core.Admin] - Starting Game [0m
+[0m2011-10-16[0m[1m[34m 00:43:09,435[0m [0m[1m[34mINFO[0m [core.Admin] - 2 players [0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:14,056[0m[1m[33m WARN [core.Admin] - TODO: Implement kicking out. java.util.concurrent.ExecutionException: java.util.concurrent.TimeoutException: Timeout expired. 5000 [0m
+[0m[1m[31mjava.util.concurrent.ExecutionException: java.util.concurrent.TimeoutException: Timeout expired. 5000[0m
+[0m[31m	at java.util.concurrent.FutureTask$Sync.innerGet(FutureTask.java:232)[0m
+[0m[31m	at java.util.concurrent.FutureTask.get(FutureTask.java:91)[0m
+[0m[31m	at core.Admin.give_turn(admin.scala:581)[0m
+[0m[31m	at core.Admin.give_turn_by_class(admin.scala:553)[0m
+[0m[31m	at core.Admin$$anon$2$$anonfun$call$4.apply(admin.scala:636)[0m
+[0m[31m	at core.Admin$$anon$2$$anonfun$call$4.apply(admin.scala:635)[0m
+[0m[31m	at scala.collection.LinearSeqOptimized$class.foreach(LinearSeqOptimized.scala:59)[0m
+[0m[31m	at scala.collection.immutable.List.foreach(List.scala:45)[0m
+[0m[31m	at core.Admin$$anon$2.call(admin.scala:635)[0m
+[0m[31m	at core.Admin$$anon$2.call(admin.scala:625)[0m
+[0m[31m	at java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:303)[0m
+[0m[31m	at java.util.concurrent.FutureTask.run(FutureTask.java:138)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886)[0m
+[0m[31m	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908)[0m
+[0m[31m	at java.lang.Thread.run(Thread.java:662)[0m
+[0m[1m[31mCaused by: java.util.concurrent.TimeoutException: Timeout expired. 5000[0m
+[0m[31m	at core.Util$.while_with_timeout(util.scala:15)[0m
+[0m[31m	at MockPlayer.take_turn(mock_objects.scala:83)[0m
+[0m[31m	at core.TrustedPlayer.take_turn(admin.scala:77)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:575)[0m
+[0m[31m	at core.Admin$$anon$1.call(admin.scala:570)[0m
+[0m	... 5 more[0m
+[0m[1m[33m2011-10-16[0m[1m[34m 00:43:14,057[0m[1m[33m WARN [core.Admin] - game is done <state id="2" name="Finished" /> [0m
+[0m2011-10-16[0m[1m[34m 00:43:14,057[0m [0m[1m[34mINFO[0m [core.Admin] - Game Thread done. [0m
