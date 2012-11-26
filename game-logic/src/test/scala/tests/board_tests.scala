@@ -111,6 +111,14 @@ class EdgeTest extends AssertionsForJUnit {
         e5.visit_road { (e: Edge) => count += 1 }
         assertEquals(count, 6)
     }
+
+	/* Hexes and edges should share the same nodes. */
+    @Test def testSameNodes = { 
+	  var board = new StandardBoard
+	  assertSame(board.getEdge(0, 1, 0), board.getEdge(0, 0, 3))
+	  assertSame(board.getEdge(0, 1, 1), board.getEdge(1, 0, 4))
+	  assertSame(board.getEdge(1, 1, 2), board.getEdge(2, 2, 5))
+	}
 }
 
 class NodeTest extends AssertionsForJUnit {
@@ -146,7 +154,7 @@ class NodeTest extends AssertionsForJUnit {
     @Test def testNodeHexes = {
         var board = new StandardBoard
         assertEquals(1, board.getNode(0, 0, 0).hexes.size)
-        assertEquals(2, board.getNode(0, 0, 1).hexes.size)
+        assertEquals(1, board.getNode(0, 0, 1).hexes.size)
         assertEquals(3, board.getNode(1, 1, 1).hexes.size)
         assertEquals(3, board.getNode(0, 1, 0).hexes.size)
         assertEquals(3, board.getNode(0, 1, 1).hexes.size)
@@ -155,6 +163,14 @@ class NodeTest extends AssertionsForJUnit {
         assertEquals(3, board.getNode(0, 1, 4).hexes.size)
         assertEquals(3, board.getNode(0, 1, 5).hexes.size)
     }
+  
+	/* Hexes and edges should share the same nodes. */
+    @Test def testSameNodes = { 
+	  var board = new StandardBoard
+	  assertSame(board.getNode(0, 1, 0), board.getNode(-1, 0, 2))
+//	  assertSame(board.getNode(0, 1, 0), board.getNode(0, 0, 4))
+//	  assertSame(board.getNode(), board.getNode()))
+	}
 
     //Test that a node knows the probablities touching it.
     @Test def testGetHexProb = {
@@ -166,7 +182,7 @@ class NodeTest extends AssertionsForJUnit {
         board.getTile(1, 1).number = 3
         board.getTile(0, 2).number = 2
         board.getTile(0, 1).number = 12
-        val n = board.getNode(1, 1, 4).get_hex_prob
+        val n = board.getNode(1, 1, 5).get_hex_prob
         assertEquals((4.0 / 36.0), n, 0)
     }
 }
@@ -201,6 +217,32 @@ class HexTest extends AssertionsForJUnit {
     }
 
     @Test def testGetOppositeHex = {
+  	  var board = new StandardBoard
+	  assertSame(board.getTile(0, 0), board.get_opposite_hex(board.getTile(0, 1), 0))
+    }
+
+    @Test def testGetClockwiseConnectingEdge = {
+        var board = new MiniBoard
+        assertEquals(board.getTile(0, 0).get_clockwise_connecting_edge.coords, board.getEdge(0, 0, 3).coords)
+        assertEquals(board.getTile(0, 1).get_clockwise_connecting_edge.coords, board.getEdge(0, 1, 4).coords)
+        assertEquals(board.getTile(-1, 1).get_clockwise_connecting_edge.coords, board.getEdge(-1, 1, 0).coords)
+        assertEquals(board.getTile(-1, 0).get_clockwise_connecting_edge.coords, board.getEdge(-1, 0, 1).coords)
+    }
+
+    @Test def testMiniboard = {
+        var board = new MiniBoard
+        board.tiles.values.foreach { hex =>
+            assertTrue(hex.is_on_edge)
+        }
+    }
+
+    @Test def testStandardBoard = {
+        var board = new StandardBoard
+        assertTrue(board.getTile(0, 0).is_on_edge)
+        assertFalse(board.getTile(0, 1).is_on_edge)
+    }
+
+    @Test def testDirections = {
         var hex = new Hex(BrickType, 8)
         hex.coords = (0, 0)
         assertEquals(hex.up, (0, -1))
@@ -225,36 +267,25 @@ class HexTest extends AssertionsForJUnit {
         assertEquals(hex.left_up, (-2, 0))
         assertEquals(hex.left_down, (-2, 1))
         assertEquals(hex.down, (-1, 1))
-    }
-
-    @Test def testGetClockwiseConnectingEdge = {
-        var board = new MiniBoard
-        assertEquals(board.getTile(0, 0).get_clockwise_connecting_edge.coords, board.getEdge(0, 0, 3).coords)
-        assertEquals(board.getTile(0, 1).get_clockwise_connecting_edge.coords, board.getEdge(0, 1, 4).coords)
-        assertEquals(board.getTile(-1, 1).get_clockwise_connecting_edge.coords, board.getEdge(-1, 1, 0).coords)
-        assertEquals(board.getTile(-1, 0).get_clockwise_connecting_edge.coords, board.getEdge(-1, 0, 1).coords)
-    }
-
-    @Test def testMiniboard = {
-        var board = new MiniBoard
-        board.tiles.values.foreach { hex =>
-            assertTrue(hex.is_on_edge)
-        }
-    }
-
-    @Test def testStandardBoard = {
-        var board = new StandardBoard
-        assertTrue(board.getTile(0, 0).is_on_edge)
-        assertFalse(board.getTile(0, 1).is_on_edge)
-
-    }
-
+	}
 }
 
 class MiniBoard extends StandardBoard {
     override def subclass_init = {
         var coords: List[(Int, Int)] = List(
             (0, 0), (0, 1), (-1, 0), (-1, 1))
+        for (c <- coords) {
+            var hex = new RandomHexFromBag
+            hex.coords = c
+            add_hex(hex)
+        }
+    }
+}
+
+class MicroBoard extends StandardBoard {
+    override def subclass_init = {
+        var coords: List[(Int, Int)] = List(
+            (0, 0), (0, 1))
         for (c <- coords) {
             var hex = new RandomHexFromBag
             hex.coords = c

@@ -7,7 +7,7 @@ trait PlayerListener {
     def got_turn(turn: Any)
 }
 
-class Message(val message: String, val sender: PlayerInfo) {}
+class Message(val message: String, val sender: PlayerInfo) extends Serializable{}
 
 abstract class Player(
     val first_name: String,
@@ -68,7 +68,7 @@ abstract class Player(
 
     /** Send a message to this player */
     def chat_msg(player: PlayerInfo, msg: String): Unit = {
-        this.msgLog :+ new Message(msg, player)
+        this.msgLog = (this.msgLog :+ new Message(msg, player))
         log.debug("MESSAGE FOR:(*{full_name}:*{color})  *{msg}")
     }
 
@@ -335,7 +335,7 @@ abstract class Player(
  * This object is essentially a struct that lets other players refer to each other
  * This way, other players will only know so much information about each other
  */
-class PlayerInfo(player: Player) {
+class PlayerInfo(player: Player) extends Serializable{
     val first_name: String = player.first_name
     val last_name: String = player.last_name
     val color = player.color

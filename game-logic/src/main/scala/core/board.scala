@@ -427,8 +427,8 @@ abstract class Board(randomize: Boolean = true, should_enforce_bandit: Boolean =
                 hex.edges(i).hexes = hex.edges(i).hexes :+ hex
 
                 //Add the existing nodes to my hex
-                hex.nodes(i) = opposing_hex.nodes((opposing_edge + 5) % 6)
-                hex.nodes((i + 5) % 6) = opposing_hex.nodes(opposing_edge)
+                hex.nodes(i) = opposing_hex.nodes((opposing_edge + 1) % 6)
+                hex.nodes((i + 1) % 6) = opposing_hex.nodes(opposing_edge)
                 hex.nodes.filter { _ != null }.foreach { n =>
                     n.hexes = (n.hexes :+ hex).distinct
                 }
@@ -450,7 +450,7 @@ abstract class Board(randomize: Boolean = true, should_enforce_bandit: Boolean =
                 hex.edges(i) = edge
                 edge.hexes = edge.hexes :+ hex
                 var n1 = hex.nodes(i)
-                var n2 = hex.nodes((i + 5) % 6)
+                var n2 = hex.nodes((i + 1) % 6)
                 edge.nodes = List[Node](n1, n2)
                 n1.edges = n1.edges :+ edge
                 n2.edges = n2.edges :+ edge

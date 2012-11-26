@@ -6,6 +6,7 @@ import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.request.Request;
 import org.apache.wicket.request.Response;
 import org.jakrabbit.settlers.pages.HomePage;
+import org.jakrabbit.settlers.pages.PlayPage;
 
 /**
  * Application object for your web application. If you want to run this
@@ -29,6 +30,7 @@ public class SettlersWebApplication extends WebApplication {
 	@Override
 	protected void init() {
 		super.init();
+		mountPage("play", PlayPage.class);
 	}
 
 	@Override

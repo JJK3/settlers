@@ -7,7 +7,6 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.jakrabbit.settlers.SettlersWebSession;
 import org.jakrabbit.settlers.User;
 
-@AuthorizeInstantiation("USER")
 public class HomePage extends WebPage {
 	private static final long serialVersionUID = 1L;
 

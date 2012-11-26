@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html xmlns:wicket="http://wicket.apache.org">
+<head>
+<meta charset="utf-8" />
+<title>Play Settlers</title>
+<link rel="stylesheet" href="style.css" type="text/css" media="screen"
+	title="Stylesheet" />
+<script type="text/javascript" src="main.js"></script>
+</head>
+<body>
+
+	<canvas id="board" width="600" height="500"></canvas>
+
+	<script type="text/javascript" wicket:id="board_data">
+		
+	</script>
+	<script type="text/javascript">
+		var canvas = document.getElementById("board");
+		var context = canvas.getContext('2d');
+		var scale = 55;
+		var cos60 = 0.5;
+		var sin60 = 0.866025;
+		var w = cos60 * scale;
+		var h = sin60 * scale;
+		var dimensions = null;
+
+		function draw_board(data) {
+			context.strokeStyle = "blue";
+			context.strokeRect(0, 0, canvas.width, canvas.height);
+			dimensions = boardDimensions(boardData);
+
+			for ( var i = 0; i < data.tiles.length; i++) {
+				draw_hex(data.tiles[i]);
+			}
+			for ( var i = 0; i < data.nodes.length; i++) {
+				draw_node(data.nodes[i]);
+			}
+			for ( var i = 0; i < data.edges.length; i++) {
+				draw_edge(data.edges[i]);
+			}
+		}
+
+		function draw_hex(hex) {
+			var coords = toRealCoords(hex.x, hex.y);
+			coords.x += (dimensions.width * (scale + w) / 2) + scale;
+			context.fillStyle = hexTypeToColor(hex.type);
+			context.beginPath();
+			var points = nodeCoords(coords.x, coords.y);
+			context.moveTo(points[0].x, points[0].y);
+			for ( var i = 0; i < 6; i++) {
+				context.lineTo(points[i].x, points[i].y);
+			}
+			context.lineTo(coords.x, coords.y);
+			context.fill();
+			context.lineWidth = 2;
+			context.strokeStyle = 'black';
+			context.stroke();
+
+			if (hex.type != "desert") {
+				context.beginPath();
+				var radius = scale / 2.5;
+				var centerX = coords.x + (scale / 2);
+				var centerY = coords.y + h;
+				context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+				context.fillStyle = 'tan';
+				context.fill();
+				context.lineWidth = 1;
+				context.strokeStyle = 'black';
+				context.stroke();
+
+				context.fillStyle = 'black';
+				var fontSize = scale / 2.5;
+				context.font = fontSize + 'px Calibri';
+				var metrics = context.measureText(hex.number);
+				context.fillText(hex.number, centerX - (metrics.width / 2),
+						centerY + (fontSize / 3));
+			}
+		}
+
+		/* Given 2 real coordinates of node 0, calculate the other node coords. */
+		function nodeCoords(x, y) {
+			return [ {
+				x : x,
+				y : y
+			}, {
+				x : x + scale,
+				y : y
+			}, {
+				x : x + scale + w,
+				y : y + h
+			}, {
+				x : x + scale,
+				y : y + (h * 2)
+			}, {
+				x : x,
+				y : y + (h * 2)
+			}, {
+				x : x - w,
+				y : y + h
+			} ];
+		}
+
+		function draw_node(node) {
+			var coords = toRealCoords(node.x, node.y)
+			coords = nodeCoords(coords.x, coords.y)[node.n];
+			coords.x += (dimensions.width * (scale + w) / 2) + scale;
+
+			context.fillStyle = 'tan';
+			var radius = 10;
+			context.beginPath();
+			context.arc(coords.x, coords.y, radius, 0, 2 * Math.PI, false);
+			context.fill();
+			context.lineWidth = 1;
+			context.strokeStyle = 'black';
+			context.stroke();
+		}
+
+		function draw_edge(edge) {
+			var node1 = edge.nodes[0];
+			var node2 = edge.nodes[1];
+			var coords1 = toRealCoords(node1.x, node1.y);
+			var coords2 = toRealCoords(node2.x, node2.y);
+			var nc1 = nodeCoords(coords1.x, coords1.y)[node1.n];
+			var nc2 = nodeCoords(coords2.x, coords2.y)[node2.n];
+			nc1.x += (dimensions.width * (scale + w) / 2) + scale
+			nc2.x += (dimensions.width * (scale + w) / 2) + scale
+			var centerX = (nc1.x + nc2.x) / 2;
+			var centerY = (nc1.y + nc2.y) / 2;
+			if (edge.road) {
+				context.strokeStyle = 'black';
+				context.beginPath();
+				context.lineWidth = 10;
+				context.moveTo(nc1.x, nc1.y);
+				context.lineTo(nc2.x, nc2.y);
+				context.stroke();
+			}
+			var port = edge.port;
+			if (port) {
+				var imageObj = new Image();
+				if (edge.n == 0 || edge.n == 3) {
+					if (port.rate == 2) {
+						imageObj.src = 'images/2-1-flat.png';
+					} else {
+						imageObj.src = 'images/3-1-flat.png';
+					}
+					centerX -= (scale / 2);
+					if (edge.n == 0) {
+						centerY -= (scale / 2);
+					}
+				} else if (edge.n == 4 || edge.n == 1) {
+					if (port.rate == 2) {
+						imageObj.src = 'images/2-1-right.png';
+					} else {
+						imageObj.src = 'images/3-1-right.png';
+					}
+					if (edge.n == 4) {
+						centerX -= (scale / 1.5) - 3;
+						centerY -= (scale / 3);
+					} else {
+						centerY -= (scale / 2);
+						centerX -= 5;
+					}
+				} else {
+					if (port.rate == 2) {
+						imageObj.src = 'images/2-1-left.png';
+					} else {
+						imageObj.src = 'images/3-1-left.png';
+					}
+					if (edge.n == 2) {
+						centerX -= 3;
+						centerY -= (scale / 3);
+					} else {
+						centerY -= 33;
+						centerX -= 30;
+					}
+				}
+				context.drawImage(imageObj, centerX, centerY);
+			}
+		}
+
+		/** Calculate the boards width, height (in tiles) */
+		function boardDimensions(boardData) {
+			var xs = boardData.tiles.map(function(tile) {
+				return tile.x;
+			})
+			var ys = boardData.tiles.map(function(tile) {
+				return tile.y;
+			})
+			return {
+				width : xs.max() - xs.min(),
+				height : ys.max() - ys.min()
+			};
+		}
+
+		/**
+		 * Convert from hex coords to real coords
+		 * returns an object with x and y
+		 */
+		function toRealCoords(x, y) {
+			return {
+				x : (x * (scale + w)),
+				y : (y * 2 * h) + (Math.abs(x % 2) * h)
+			}
+		}
+
+		function hexTypeToColor(type) {
+			if (type == "brick") {
+				return "red";
+			} else if (type == "ore") {
+				return "darkviolet";
+			} else if (type == "wheat") {
+				return "gold";
+			} else if (type == "sheep") {
+				return "lightgreen";
+			} else if (type == "wood") {
+				return "darkgreen";
+			} else if (type == "desert") {
+				return "tan";
+			}
+		}
+
+		draw_board(boardData);
+	</script>
+
+	<div wicket:id="chat"></div>
+</body>
+</html>

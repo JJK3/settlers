@@ -251,7 +251,7 @@ class Admin(
     var previous_player_with_largest_army: PlayerInfo = null
     var previous_player_with_longest_road: PlayerInfo = null
     protected var current_turn_obj: Turn = null
-    var times_skipped = Map[String, Int]()
+    var times_skipped = Map[String, Int]().withDefaultValue(0)
     val setup_turn_class = classOf[SetupTurn]
     val normal_turn_class = classOf[Turn]
     var kicked_out: List[Player] = Nil

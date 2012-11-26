@@ -1,13 +1,12 @@
 <html xmlns:wicket="http://wicket.apache.org">
-<head>
-<title>Wicket Examples - signin2</title>
-<link rel="stylesheet" type="text/css" href="style.css" />
-</head>
+<wicket:head>
+	<title>Settlers - Login</title>
+	<link rel="stylesheet" type="text/css" href="style.css" />
+</wicket:head>
 <body>
-	<form wicket:id="signin_form">
-		What's your name? <input wicket:id="username" />
-		<br/>
-		<input type="submit" value="Play!" />
+	<form wicket:id="signin_form" class="login">
+		What's your name? <input wicket:id="username" autofocus="autofocus" />
+		<br /> <input type="submit" value="Play!" />
 	</form>
 </body>
 </html>

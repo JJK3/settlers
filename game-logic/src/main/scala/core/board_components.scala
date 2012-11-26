@@ -99,6 +99,7 @@ class Edge(var x: Int = -1, var y: Int = -1, var edgeNum: Int = -1) {
     }
 
     def has_road: Boolean = this.road != null
+	def has_port: Boolean = nodes.forall{ _.has_port }
 
     /**
      * An iterator to visit every connected road with the same color

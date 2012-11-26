@@ -75,6 +75,7 @@ class StandardBoard extends Board {
             var port = new RandomPortFromBag
             for (n <- portEdge.nodes) {
                 n.port = port
+			    println("port:" + n);
             }
         }
     }
