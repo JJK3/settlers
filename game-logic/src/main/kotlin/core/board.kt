@@ -15,7 +15,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     val tiles = HashMap<HexCoordinate, Hex>()
-    val longestRoadAuthority = LongestRoadAuthority(this)
+    private val longestRoadAuthority = LongestRoadAnalyzer(this)
     fun all_nodes(): Set<Node> = tiles.values.flatMap { it.nodes.toList() }.toSet()
     fun nodes() = all_nodes()
     fun all_edges() = tiles.values.flatMap { it.edges.toList() }.toSet()

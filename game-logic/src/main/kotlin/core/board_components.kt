@@ -30,6 +30,7 @@ class Settlement(color: String) : City(color) {
 
 class Road(color: String) : BoardPiece(color)
 class Port(val kind: Resource?, val rate: Int)
+
 enum class Resource {
     Ore, Wood, Sheep, Brick, Wheat
 }
