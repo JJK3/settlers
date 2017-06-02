@@ -25,7 +25,7 @@ interface MoveBanditStrategy {
 
 class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
     override fun do_setup_turn(turn: SetupTurn) {
-        val spots = player.board!!.get_valid_settlement_spots(false, player.color)
+        val spots = player.board!!.getValidSettlementSpots(false, player.color)
         if (spots.isEmpty())
             throw  IllegalStateException("Could not find any settlement spots")
         //spots.sort!{|a,b| a.getProbability <=> b.getProbability}
@@ -45,10 +45,10 @@ class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
         /// }
 
         val settlementNode = player.board!!.getNode(node.coords())!!
-        if (!settlementNode.has_city()) {
+        if (!settlementNode.hasCity()) {
             throw IllegalStateException("Node (${node.coords()}) Should have a Settlement, but it doesn't")
         }
-        val road_spots = player.board!!.get_valid_road_spots(player.color, settlementNode)
+        val road_spots = player.board!!.getValidRoadSpots(player.color, settlementNode)
         road_spots.firstOrNull()?.let { turn.place_road(it.coords()) }
         turn.done()
     }
@@ -66,8 +66,8 @@ class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
      */
     override fun move_bandit(old_hex: Hex): Hex {
         val preferred = player.board!!.tiles.values.find { t ->
-            val has_me = t.nodes.any { n -> n.has_city() && n.city!!.color == player.color }
-            val has_other = t.nodes.any { n -> n.has_city() && n.city!!.color != player.color }
+            val has_me = t.nodes.any { n -> n.hasCity() && n.city!!.color == player.color }
+            val has_other = t.nodes.any { n -> n.hasCity() && n.city!!.color != player.color }
             !t.has_bandit && !has_me && has_other
         }
         //admin.chat_msg(self, "gimme a card!") if chatter
@@ -75,7 +75,7 @@ class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
             return preferred
         }
         val preferred2 = player.board!!.tiles.values.find { t ->
-            val has_me = t.nodes.any { n -> n.has_city() && n.city!!.color == player.color }
+            val has_me = t.nodes.any { n -> n.hasCity() && n.city!!.color == player.color }
             !t.has_bandit && !has_me
         }
         if (preferred2 != null) {
@@ -120,7 +120,7 @@ class RandomPlayer(first_name: String,
 
                 val city = City(color)
                 if (can_afford(listOf(city)) && countCitiesLeft() > 0) {
-                    var spots = board!!.get_valid_city_spots(color)
+                    var spots = board!!.getValidCitySpots(color)
                     if (spots.isNotEmpty()) {
                         spots = spots.sortedBy { Dice.getProbability(it) }
                         turn.place_city(spots.last().coords())
@@ -132,7 +132,7 @@ class RandomPlayer(first_name: String,
                 }
 
                 if (!admin.is_game_done() && can_afford(listOf(Settlement(color))) && countSettlementsLeft() > 0) {
-                    val spots = board!!.get_valid_settlement_spots(true, color)
+                    val spots = board!!.getValidSettlementSpots(true, color)
                     if (spots.isNotEmpty()) {
                         //spots.sort!{|a,b| a.getProbability <=> b.getProbability}
                         turn.place_settlement(spots.last().coords())
@@ -142,14 +142,14 @@ class RandomPlayer(first_name: String,
                 }
 
                 if (!admin.is_game_done() && can_afford(listOf(Road(color))) && countRoadsLeft() > 0) {
-                    val spots = board!!.get_valid_road_spots(color)
-                    val longest_road = board!!.has_longest_road(color)
-                    if (board!!.get_valid_settlement_spots(true, color).size < 4) {
+                    val spots = board!!.getValidRoadSpots(color)
+                    val longest_road = board!!.hasLongestRoad(color)
+                    if (board!!.getValidSettlementSpots(true, color).size < 4) {
                         if (spots.isNotEmpty()) {
                             turn.place_road(spots.first().coords())
                         }
                         //turn.taint
-                        if (!longest_road && board!!.has_longest_road(color)) {
+                        if (!longest_road && board!!.hasLongestRoad(color)) {
                             log.info("<BOT " + full_name() + ": Got longest road> ")
                         }
                     }
@@ -336,19 +336,19 @@ class SinglePurchasePlayer(first_name: String,
     //calculate which piece to try for based on the current turn.
     private fun calculate_desired_piece(turn: Turn): Purchaseable? {
         if (countCitiesLeft() > 0) {
-            val spots = board!!.get_valid_city_spots(color)
+            val spots = board!!.getValidCitySpots(color)
             if (spots.isNotEmpty()) {
                 return City(color)
             }
         }
         if (countSettlementsLeft() > 0) {
-            val spots = board!!.get_valid_settlement_spots(true, color)
+            val spots = board!!.getValidSettlementSpots(true, color)
             if (spots.isNotEmpty()) {
                 return Settlement(color)
             }
         }
         if (countRoadsLeft() > 0) {
-            val spots = board!!.get_valid_road_spots(color)
+            val spots = board!!.getValidRoadSpots(color)
             if (spots.isNotEmpty()) {
                 return Road(color)
             }
@@ -370,31 +370,29 @@ class SinglePurchasePlayer(first_name: String,
     fun place_desired_piece() {
         when (desired_piece) {
             is Road -> {
-                var spots = board!!.get_valid_road_spots(color)
+                var spots = board!!.getValidRoadSpots(color)
 
                 // Organize the edges by the number of adjecent roads
                 // and whether or not they have cities on them
 
-                //spots = spots.sort_and_partition{|e| e.get_adjecent_edges.size}
+                //spots = spots.sort_and_partition{|e| e.getAdjecentEdges.size}
                 //spots.map!{|chunk| chunk.partition{|e| e.nodes.all?{|n| !n.city} }}
                 //spots.flatten!
 
                 if (spots.isEmpty()) throw  IllegalStateException("No Valid Spots")
                 // Find a spot that will increase your longest road
-                val firstEdge = board!!.edges().find { e -> e.has_road() && e.road!!.color == color }!!
+                val firstEdge = board!!.allEdges().find { e -> e.hasRoad() && e.road!!.color == color }!!
 
                 val longest = board!!.getLongestRoad(firstEdge).size
                 var foundGoodSpot = false
                 var break1 = false
                 spots.forEach { spot ->
                     if (!break1) {
-                        board!!.place_road(Road(color), spot.coords().hex.x, spot.coords().hex.y,
-                                spot.coords().edgeNumber.n)
+                        board!!.placeRoad(Road(color), spot.coords())
                         val _longest = board!!.getLongestRoad(firstEdge).size
-                        board!!.remove_road(spot.coords().hex.x, spot.coords().hex.y, spot.coords().edgeNumber.n)
+                        board!!.removeRoad(spot.coords())
                         if (_longest > longest) {
-                            this.current_turn!!.place_road(spot.coords().hex.x, spot.coords().hex.y,
-                                    spot.coords().edgeNumber.n)
+                            this.current_turn!!.place_road(spot.coords())
                             foundGoodSpot = true
                             break1 = true
                         }
@@ -406,7 +404,7 @@ class SinglePurchasePlayer(first_name: String,
                 }
             }
             is Settlement -> {
-                val settlement_spots = board!!.get_valid_settlement_spots(true, color).sortedBy {
+                val settlement_spots = board!!.getValidSettlementSpots(true, color).sortedBy {
                     Dice.getProbability(it)
                 }
                 if (settlement_spots.isEmpty()) {
@@ -416,7 +414,7 @@ class SinglePurchasePlayer(first_name: String,
                 current_turn!!.place_settlement(settlement_spots.last().coords())
             }
             is City -> {
-                val city_spots = board!!.get_valid_city_spots(color).sortedBy { Dice.getProbability(it) }
+                val city_spots = board!!.getValidCitySpots(color).sortedBy { Dice.getProbability(it) }
                 if (city_spots.isEmpty()) {
                     throw IllegalStateException("No Valid Spots")
                 }

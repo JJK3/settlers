@@ -34,7 +34,7 @@ class HexTest {
         assertTrue(newEdge.nodes().all{it.hexes.size == 2})
         assertEquals(oldEdge.nodes().size, 2)
         assertEquals(newEdge.nodes().size, 2)
-        assertEquals(newEdge.get_adjecent_edges().size, 4)
+        assertEquals(newEdge.getAdjecentEdges().size, 4)
     }
 
     @Test

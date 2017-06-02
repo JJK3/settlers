@@ -56,7 +56,7 @@ open class StandardBoard : Board(true) {
         for (c in coords) {
             val hex = tiles.grab()
             hex.coords = c
-            add_hex(hex)
+            addHex(hex)
         }
 
         SpiralIterator(this).getHexes().forEach { tile ->
@@ -78,7 +78,7 @@ open class StandardBoard : Board(true) {
                 n.port = port
             }
         }
-        enforce_bandit()
+        enforceBandit()
     }
 }
 
@@ -118,7 +118,7 @@ class SquareBoard(val side: Int) : StandardBoard() {
         for (c in coords) {
             var hex = bag.grab()
             hex.coords = HexCoordinate(c.first, c.second)
-            add_hex(hex)
+            addHex(hex)
         }
 
         val number_bag = NSizeNumberBag(side * side)

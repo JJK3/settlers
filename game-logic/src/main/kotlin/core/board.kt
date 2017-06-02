@@ -17,10 +17,8 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     val tiles = HashMap<HexCoordinate, Hex>()
     var developmentCards = DevelopmentCardBag()
     private val longestRoadAuthority = LongestRoadDetector(this)
-    fun all_nodes(): Set<Node> = tiles.values.flatMap { it.nodes.toList() }.toSet()
-    fun nodes() = all_nodes()
-    fun all_edges() = tiles.values.flatMap { it.edges.toList() }.toSet()
-    fun edges() = all_edges()
+    fun allNodes(): Set<Node> = tiles.values.flatMap { it.nodes.toList() }.toSet()
+    fun allEdges() = tiles.values.flatMap { it.edges.toList() }.toSet()
     fun copy(): Board {
         val b = Board(should_enforce_bandit)
         b.tiles.putAll(this.tiles.mapValues { it.value.copy() })
@@ -34,29 +32,13 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     fun getTileWithError(x: Int, y: Int): Hex = getTile(x, y) ?: throw IllegalArgumentException(
             "Hex not found: ($x,$y)")
 
-    /**
-     * Get the Node object at the given coordinates
-     * @param x The Cartesian x coordinate of the Hex
-     * @param y The Cartesian y coordinate of the Hex
-     * @param n The node number on that Hex
-     */
-    fun getNode(x: Int, y: Int, n: Int): Node? = getTile(x, y)?.node(NodeNumber(n))
-
     fun getNode(coord: NodeCoordinate): Node? = getTile(coord.hex)?.node(coord.nodeNumber)
-    /**
-     * Get the Edge object at the given coordinates
-     * @param x The Cartesian x coordinate of the Hex
-     * @param y The Cartesian y coordinate of the Hex
-     * @param e The edge number on that Hex
-     */
-    fun getEdge(x: Int, y: Int, e: Int): Edge? = getTile(x, y)?.edges?.get(e)
-
     fun getEdge(coord: EdgeCoordinate): Edge? = getTile(coord.hex)?.edge(coord.edgeNumber)
     /** Get all complete roads.
      * @return A list of complete roads, where a complete road is represented by a set of edges */
     fun getAllRoadGroups(): List<Set<Edge>> {
         var result = emptyList<Set<Edge>>()
-        var edgesToExamine: List<Edge> = edges().filter(Edge::has_road)
+        var edgesToExamine: List<Edge> = allEdges().filter(Edge::hasRoad)
         while (edgesToExamine.isNotEmpty()) {
             val edge = edgesToExamine.first()
             val completeRoad = edge.getCompleteRoad()
@@ -67,18 +49,18 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     /** Does the given player have longest road. */
-    fun has_longest_road(color: String): Boolean = longestRoadAuthority.hasLongestRoad(color)
+    fun hasLongestRoad(color: String): Boolean = longestRoadAuthority.hasLongestRoad(color)
 
     fun getLongestRoad(edge: Edge): List<Edge> = longestRoadAuthority.getLongestRoad(edge)
     /** Port nodes controlled by the given player. */
-    fun port_nodes(color: String) =
-            all_nodes().filter { n -> n.has_city() && n.has_port() && n.city?.color == color }.toList()
+    fun portNodes(color: String) =
+            allNodes().filter { n -> n.hasCity() && n.hasPort() && n.city?.color == color }.toList()
 
     /** Ports controlled by the given player */
-    fun get_ports(color: String): List<Port> = port_nodes(color).map(Node::port).filterNotNull().toList()
+    fun getPorts(color: String): List<Port> = portNodes(color).map(Node::port).filterNotNull().toList()
 
     /** Gets a list of cards, that the given player should receive */
-    fun get_cards(number: Int, color: String): List<Resource> {
+    fun getCards(number: Int, color: String): List<Resource> {
         val valid_hexes = tiles.values.filter { t ->
             t.number == number && !t.has_bandit && t.resource != null
         }
@@ -93,32 +75,36 @@ open class Board(val should_enforce_bandit: Boolean = true) {
         }.toList()
     }
 
-    /** A helper to wrap edge mutations. */
-    private fun edge_updater(tileX: Int, tileY: Int, edgeNum: Int, visitor: (Edge) -> Unit): Edge {
+    fun placeRoad(road: Road, edgeCoordinate: EdgeCoordinate): Edge =
+            synchronized(this) {
+                getEdge(edgeCoordinate)!!.let {
+                    it.road = road
+                    it
+                }
+            }
+
+    fun removeRoad(edgeCoordinate: EdgeCoordinate): Edge =
+            synchronized(this) {
+                getEdge(edgeCoordinate)!!.let { edge ->
+                    if (!edge.hasRoad()) throw IllegalStateException("Edge does not have a road on it")
+                    edge.road = null
+                    edge
+                }
+            }
+
+    /**
+     * Called ONLY by a Turn object, this method mutates the board by placing a
+     * City or Settlement on it.
+     */
+    fun placeCity(city: City, nodeCoordinate: NodeCoordinate): Node {
         synchronized(this) {
-            val edge = getTileWithError(tileX, tileY).edges[edgeNum]
-            visitor.invoke(edge)
-            return edge
+            val node = getNode(nodeCoordinate)!!
+            node.city = city
+            return node
         }
     }
 
-    /**
-     * This method mutates the board by placing a road on it.
-     * NOTE: this method doesn't to any validation based upon rules.  It just modifies the board.
-     */
-    fun place_road(road: Road, tileX: Int, tileY: Int, edgeNum: Int): Edge =
-            edge_updater(tileX, tileY, edgeNum, { edge ->
-                edge.road = road
-            })
-
-    fun remove_road(tileX: Int, tileY: Int, edgeNum: Int): Edge =
-            edge_updater(tileX, tileY, edgeNum, { edge ->
-                if (!edge.has_road()) throw  IllegalStateException("Edge does not have a road on it")
-                var adjecentEdges = edge.get_adjecent_edges().filter { it.has_road() }
-                edge.road = null
-            })
-
-    fun enforce_bandit() {
+    fun enforceBandit() {
         val desert = findDesert()
         return when (desert) {
             null -> {
@@ -132,22 +118,10 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     private fun findDesert() = tiles.values.find { it.resource == null }
     private fun setBandit(hex: Hex) = tiles.values.forEach { it.has_bandit = (it == hex) }
     /**
-     * Called ONLY by a Turn object, this method mutates the board by placing a
-     * City or Settlement on it.
-     */
-    fun place_city(city: City, x: Int, y: Int, nodeNum: Int): Node {
-        synchronized(this) {
-            val node = getTileWithError(x, y).nodes[nodeNum]
-            node.city = city
-            return node
-        }
-    }
-
-    /**
      * Move the bandit to a  hex
      * @return the old hex that the bandit was on.
      */
-    fun move_bandit(hex: Hex): Hex {
+    fun moveBandit(hex: Hex): Hex {
         synchronized(this) {
             val currentBanditHex = tiles.values.find(Hex::has_bandit) ?: throw RuleException(
                     "Board does not currently have a bandit ${this}")
@@ -170,15 +144,15 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      * you need to ask which spots are valid for your player's color.
      * returns a list of Node objects
      */
-    fun get_valid_settlement_spots(roadConstraint: Boolean, roadColor: String): List<Node> {
+    fun getValidSettlementSpots(roadConstraint: Boolean, roadColor: String): List<Node> {
         synchronized(this) {
-            return all_nodes().filter { n ->
-                val is2AwayFromCities: Boolean = n.get_adjecent_nodes().none { it.has_city() }
+            return allNodes().filter { n ->
+                val is2AwayFromCities: Boolean = n.getAdjecentNodes().none { it.hasCity() }
                 if (roadConstraint) {
-                    val hasTouchingRoad = n.edges().find { e -> e.has_road() && e.road?.color == roadColor } != null
-                    hasTouchingRoad && is2AwayFromCities && !n.has_city()
+                    val hasTouchingRoad = n.edges().find { e -> e.hasRoad() && e.road?.color == roadColor } != null
+                    hasTouchingRoad && is2AwayFromCities && !n.hasCity()
                 } else {
-                    is2AwayFromCities && !n.has_city()
+                    is2AwayFromCities && !n.hasCity()
                 }
             }.toSet().toList()
         }
@@ -191,16 +165,16 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      * This is used during setup when players can only place a road touching the
      * settlement they just placed.
      */
-    fun get_valid_road_spots(road_color: String, touching_node: Node? = null): List<Edge> {
+    fun getValidRoadSpots(road_color: String, touching_node: Node? = null): List<Edge> {
         synchronized(this) {
             var result: List<Edge> = emptyList()
-            all_nodes().forEach { n ->
-                if (n.has_city() && n.city!!.color == road_color) {
-                    result += (n.edges().filterNot(Edge::has_road))
-                } else if (!n.has_city()) {
+            allNodes().forEach { n ->
+                if (n.hasCity() && n.city!!.color == road_color) {
+                    result += (n.edges().filterNot(Edge::hasRoad))
+                } else if (!n.hasCity()) {
                     n.edges().forEach { edge ->
-                        if (edge.has_road() && edge.road!!.color == road_color) {
-                            result += (n.edges().filterNot(Edge::has_road))
+                        if (edge.hasRoad() && edge.road!!.color == road_color) {
+                            result += (n.edges().filterNot(Edge::hasRoad))
                         }
                     }
                 }
@@ -211,9 +185,9 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     /** Get all the valid spots to place a city. */
-    fun get_valid_city_spots(color: String): List<Node> {
+    fun getValidCitySpots(color: String): List<Node> {
         synchronized(this) {
-            return all_nodes().filter { node ->
+            return allNodes().filter { node ->
                 node.city?.let { city ->
                     when (city) {
                         is Settlement -> city.color == color
@@ -227,36 +201,18 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     /**
      * Add a  hex to the board.  We assume that the board is already in a correct state where there are not duplicate edges or nodes.
      */
-    fun add_hex(hex: Hex) {
+    fun addHex(hex: Hex) {
         if (tiles.contains(hex.coords)) {
-            throw IllegalArgumentException("The given hex is already on the board:" + hex.coords)
+            throw IllegalArgumentException("The given hex is already on the board: ${hex.coords}")
         }
         tiles[hex.coords] = hex
-
-        //Take the exising edges
         EdgeNumber.ALL.forEach { i ->
             val old = hex.edge(i)
-            get_opposite_hex(hex, i.n)?.let { opposing_hex ->
+            getTile(hex.coords.getOppositeHex(i))?.let { opposing_hex ->
                 val new = opposing_hex.edge(i.opposite())
                 hex.replaceEdge(old, new)
             }
         }
-    }
-
-    /**
-     * Given a hex and an edge number, this will return the opposite hex, or null if there isn't one.
-     */
-    fun get_opposite_hex(hex: Hex, edge: Int): Hex? {
-        val coords = when (edge) {
-            0 -> hex.coords.up()
-            1 -> hex.coords.right_up()
-            2 -> hex.coords.right_down()
-            3 -> hex.coords.down()
-            4 -> hex.coords.left_down()
-            5 -> hex.coords.left_up()
-            else -> throw IllegalArgumentException("bad edge: $edge")
-        }
-        return getTile(coords.x, coords.y)
     }
 }
 

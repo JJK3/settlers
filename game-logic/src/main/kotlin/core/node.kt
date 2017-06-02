@@ -45,10 +45,10 @@ class Node {
     fun edges() = hexes.flatMap { it.key.adjecentEdges(it.value) }.toSet()
     fun coords() = hexes.map { NodeCoordinate(it.key.coords, it.value) }.first()
     /** The Array of adjecent nodes */
-    fun get_adjecent_nodes() = edges().flatMap(Edge::nodes).toSet().filter { it != this }
+    fun getAdjecentNodes() = edges().flatMap(Edge::nodes).toSet().filter { it != this }
 
-    fun has_city(): Boolean = this.city != null
-    fun has_port(): Boolean = this.port != null
+    fun hasCity(): Boolean = this.city != null
+    fun hasPort(): Boolean = this.port != null
     override fun toString(): String {
         return "Node(city=$city, port=$port, coords=$hexes)"
     }

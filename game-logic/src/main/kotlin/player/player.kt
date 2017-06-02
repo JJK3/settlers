@@ -228,7 +228,7 @@ abstract class Player(
     abstract fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference
 
     override fun player_moved_bandit(player_reference: PlayerReference, hex: Hex) {
-        board?.move_bandit(hex)
+        board?.moveBandit(hex)
     }
 
     /** Notify the observer that the game has begun */
@@ -267,8 +267,8 @@ abstract class Player(
      * [player] The player that placed the road
      * [x, y, edge] The edge coordinates
      */
-    override fun placed_road(player_reference: PlayerReference, x: Int, y: Int, edge: Int) {
-        board?.place_road(Road(player_reference.color), x, y, edge)
+    override fun placed_road(player_reference: PlayerReference, edgeCoordinate: EdgeCoordinate) {
+        board?.placeRoad(Road(player_reference.color), edgeCoordinate)
     }
 
     /**
@@ -276,8 +276,8 @@ abstract class Player(
      * [player] The player that placed the settlement
      * [x, y, node] The node coordinates
      */
-    override fun placed_settlement(player_reference: PlayerReference, x: Int, y: Int, node: Int) {
-        board?.place_city(Settlement(player_reference.color), x, y, node)
+    override fun placed_settlement(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        board?.placeCity(Settlement(player_reference.color), nodeCoordinate)
     }
 
     /**
@@ -285,8 +285,8 @@ abstract class Player(
      * [player] The player that placed the city
      * [x, y, node] The node coordinates
      */
-    override fun placed_city(player_reference: PlayerReference, x: Int, y: Int, node: Int) {
-        board?.place_city(City(player_reference.color), x, y, node)
+    override fun placed_city(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        board?.placeCity(City(player_reference.color), nodeCoordinate)
     }
 
     /** How many resource cards does this player have? */

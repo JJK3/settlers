@@ -81,7 +81,7 @@ class MediumBoard : Board() {
         for (c in coords) {
             val hex = tileBag.grab()
             hex.coords = c
-            add_hex(hex)
+            addHex(hex)
         }
     }
 }

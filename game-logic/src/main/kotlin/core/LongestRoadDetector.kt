@@ -22,7 +22,7 @@ class LongestRoadDetector(val board: Board) {
     /** Get longest road for this edge. */
     private fun getLongestRoadHelper(edge: Edge): LongestRoadResult {
         val empty = LongestRoadResult(emptyList(), emptySet())
-        if (!edge.has_road() || !isEndOfRoad(edge)) {
+        if (!edge.hasRoad() || !isEndOfRoad(edge)) {
             return empty
         }
         return getLongestRoadHelper(edge, empty)
@@ -39,7 +39,7 @@ class LongestRoadDetector(val board: Board) {
     }
 
     private fun getNextEdges(edge: Edge, existingResult: LongestRoadResult, previousEdge: Edge?): Set<Edge> {
-        var edgesToTraverseNext = previousEdge?.let { edge.getOppositeEdges(it) } ?: edge.get_adjecent_edges()
+        var edgesToTraverseNext = previousEdge?.let { edge.getOppositeEdges(it) } ?: edge.getAdjecentEdges()
         edgesToTraverseNext -= existingResult.examinedEdges
         // TODO: Account for a city or settlement that breaks longest road
         edgesToTraverseNext = filterMatchingColor(edgesToTraverseNext, edge).toSet()
@@ -48,7 +48,7 @@ class LongestRoadDetector(val board: Board) {
 
     /** get all LongestRoadResults for the entire board. */
     private fun getLongestRoads(): List<LongestRoadResult> {
-        var edgesToExamine = board.edges().filter(Edge::has_road)
+        var edgesToExamine = board.allEdges().filter(Edge::hasRoad)
         var longestRoads = emptyList<LongestRoadResult>()
         while (edgesToExamine.isNotEmpty()) {
             val longestRoad = getLongestRoadHelper(edgesToExamine.first())
@@ -60,7 +60,7 @@ class LongestRoadDetector(val board: Board) {
     }
 
     /** Does this edge have an open size (i.e. not connected to a road) ? */
-    private fun isEndOfRoad(edge: Edge): Boolean = filterMatchingColor(edge.get_adjecent_edges(), edge).size <= 1
+    private fun isEndOfRoad(edge: Edge): Boolean = filterMatchingColor(edge.getAdjecentEdges(), edge).size <= 1
 
     private fun filterMatchingColor(edges: Iterable<Edge>, edgeToMatch: Edge) =
             edges.filter { it.road?.color == edgeToMatch.road!!.color }

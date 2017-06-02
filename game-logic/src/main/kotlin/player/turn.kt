@@ -65,7 +65,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     }
 
     /** The list of action cards currently in play. i.e. SoldierCards etc. */
-    fun active_cards() = player.get_played_dev_cards().filter { !it.is_done }
+    fun active_cards() = player.get_played_dev_cards().filter { !it.isDone }
 
     open fun buy_development_card(): DevelopmentCard {
         check_state("Development card bought")
@@ -120,7 +120,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     fun move_bandit(_tile: Hex) {
         //TODO: implement rule checking here so people can't move the
         //bandit whenever they want.
-        board.move_bandit(_tile)
+        board.moveBandit(_tile)
 
         admin.observers.forEach {
             it.player_moved_bandit(player.info(), _tile)
@@ -129,7 +129,9 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         //Take a card from a player
         //the colors of the cities touching the  tile
         val touching_colors = _tile.nodes_with_cities().map { it.city!!.color }.distinct()
-        val touching_players = touching_colors.map { get_player(it)!!.info() }.filterNot { it == player.info() }.toList()
+        val touching_players = touching_colors.map {
+            get_player(it)!!.info()
+        }.filterNot { it == player.info() }.toList()
 
         var player_to_take_from: PlayerReference? = null
         if (!touching_players.isEmpty()) {
@@ -147,17 +149,16 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         all_quotes += quote
     }
 
-    fun place_road(edgeCoordinate: EdgeCoordinate) = place_road(edgeCoordinate.hex.x, edgeCoordinate.hex.y, edgeCoordinate.edgeNumber.n)
-    open fun place_road(x: Int, y: Int, edgeNum: Int) {
+    open fun place_road(edgeCoordinate: EdgeCoordinate) {
         log.debug("$player is trying to buy a road")
         if (admin.is_game_done()) break_rule("Game is Over")
         check_state("Road placed")
-        val edge = board.getEdge(x, y, edgeNum)
+        val edge = board.getEdge(edgeCoordinate)
         if (edge == null) {
-            break_rule("Invalid edge: " + x + " " + y + " " + edgeNum)
+            break_rule("Invalid edge: $edgeCoordinate")
         }
-        if (!board.get_valid_road_spots(player.color).contains(edge)) {
-            break_rule("Invalid Road Placement " + x + " " + y + " " + edgeNum)
+        if (!board.getValidRoadSpots(player.color).contains(edge)) {
+            break_rule("Invalid Road Placement $edgeCoordinate")
         }
 
         //if a player uses a roadBuilding card, then his purchasedRoads > 0
@@ -169,8 +170,8 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         }
         val road = Road(player.color)
         purchase(road, should_pay)
-        board.place_road(road, x, y, edgeNum)
-        admin.observers.forEach { it.placed_road(player.info(), x, y, edgeNum) }
+        board.placeRoad(road, edgeCoordinate)
+        admin.observers.forEach { it.placed_road(player.info(), edgeCoordinate) }
         admin.checkForWinner()
     }
 
@@ -178,38 +179,36 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     fun get_player(color: String) = admin.getPlayer(color)
 
     fun can_afford(pieces: List<Purchaseable>) = get_player(player.color)!!.can_afford(pieces)
-    fun place_settlement(coords: NodeCoordinate) = place_settlement(coords.hex.x, coords.hex.y, coords.nodeNumber.n)
-    open fun place_settlement(x: Int, y: Int, nodeNum: Int): Node {
+    open fun place_settlement(coord: NodeCoordinate): Node {
         log.debug("$player is trying to buy a settlement")
         if (admin.is_game_done()) break_rule("Game is Over")
         check_state("Settlement placed")
-        val node = validate_node(x, y, nodeNum)
-        if (node.has_city()) break_rule("Cannot place a settlement on a " + node.city)
+        val node = board.getNode(coord)!!
+        if (node.hasCity()) break_rule("Cannot place a settlement on a " + node.city)
         val sett = Settlement(player.color)
         purchase(sett)
-        val spots = board.get_valid_settlement_spots(road_constraint, player.color)
-        if (!board.get_valid_settlement_spots(road_constraint, player.color).contains(node)) {
-            break_rule("Invalid Settlement Placement " + x + " " + y + " " + nodeNum)
+        val spots = board.getValidSettlementSpots(road_constraint, player.color)
+        if (!board.getValidSettlementSpots(road_constraint, player.color).contains(node)) {
+            break_rule("Invalid Settlement Placement $coord")
         }
-        board.place_city(sett, x, y, nodeNum)
-        log.info("Settlement Placed by " + player + " on " + x + "," + y + "," + nodeNum)
-        admin.observers.forEach { it.placed_settlement(player.info(), x, y, nodeNum) }
+        board.placeCity(sett, coord)
+        log.info("Settlement Placed by $player on $coord")
+        admin.observers.forEach { it.placed_settlement(player.info(), coord) }
         admin.checkForWinner()
         return node
     }
 
-    fun get_valid_settlement_spots() = board.get_valid_settlement_spots(road_constraint, player.color)
-    open fun get_valid_road_spots() = board.get_valid_road_spots(player.color)
-    fun place_city(nodeCoordinate: NodeCoordinate) = place_city(nodeCoordinate.hex.x, nodeCoordinate.hex.y, nodeCoordinate.nodeNumber.n)
-    open fun place_city(x: Int, y: Int, nodeNum: Int): Node {
+    fun get_valid_settlement_spots() = board.getValidSettlementSpots(road_constraint, player.color)
+    open fun get_valid_road_spots() = board.getValidRoadSpots(player.color)
+    open fun place_city(coord: NodeCoordinate): Node {
         log.debug("$player is trying to buy a city")
         if (admin.is_game_done()) {
             break_rule("Game is Over")
         }
         check_state("City placed")
-        val node = validate_node(x, y, nodeNum)
+        val node = board.getNode(coord)!!
 
-        if (node.has_city()) {
+        if (node.hasCity()) {
             if (node.city?.color == player.color) {
                 if (node.city !is Settlement) {
                     break_rule("A city must be placed on top of a Settlement, not a ${node.city}")
@@ -217,27 +216,18 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
                 val city = City(player.color)
                 purchase(city)
                 player.addPiecesLeft(Settlement::class.java, 1) //Put the settlement back in the 'bag'
-                board.place_city(city, x, y, nodeNum)
-                log.info("City Placed by $player on $x,$y,$nodeNum")
-                admin.observers.forEach { it.placed_city(player.info(), x, y, nodeNum) }
+                board.placeCity(city, coord)
+                log.info("City Placed by $player on $coord")
+                admin.observers.forEach { it.placed_city(player.info(), coord) }
                 admin.checkForWinner()
             } else {
-                break_rule("Invalid City Placement.  Settlement has wrong color at $x $y $nodeNum. " +
+                break_rule("Invalid City Placement.  Settlement has wrong color at $coord. " +
                         "$player expected:${player.color} was:${node.city?.color}")
             }
         } else {
-            break_rule("Invalid City Placement.  There is no settlement at $x $y $nodeNum")
+            break_rule("Invalid City Placement.  There is no settlement at $coord")
         }
         return node
-    }
-
-    /** validate that the given node DOES exist */
-    private fun validate_node(x: Int, y: Int, nodeNum: Int): Node {
-        val node = board.getNode(x, y, nodeNum)
-        if (node != null) {
-            return node
-        }
-        throw RuleException("Invalid node: $x $y $nodeNum")
     }
 
     fun assert_not_done() = assert_rule(isDone(), "Turn is already done: ${state}")
@@ -400,9 +390,8 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
     var placed_settlement: Node? = null
     override val road_constraint = false
     override val is_setup = true
-
-    override fun place_road(x: Int, y: Int, edgeNum: Int) {
-        val e = board.getEdge(x, y, edgeNum)
+    override fun place_road(edgeCoordinate: EdgeCoordinate) {
+        val e = board.getEdge(edgeCoordinate)
         val validSpots = get_valid_road_spots()
 
         assert_rule(placed_road != null, "Too many roads placed in setup")
@@ -410,18 +399,17 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         assert_rule(!validSpots.contains(e), "Road must touch the settlement just placed")
 
         this.placed_road = e
-        super.place_road(x, y, edgeNum)
+        super.place_road(edgeCoordinate)
     }
 
-    override fun get_valid_road_spots(): List<Edge> = board.get_valid_road_spots(player.color, placed_settlement)
-
-    override fun place_settlement(x: Int, y: Int, nodeNum: Int): Node {
+    override fun get_valid_road_spots(): List<Edge> = board.getValidRoadSpots(player.color, placed_settlement)
+    override fun place_settlement(nodeCoordinate: NodeCoordinate): Node {
         if (placed_settlement != null)
             break_rule("Too many settlements placed in setup")
-        val node: Node = super.place_settlement(x, y, nodeNum)
+        val node: Node = super.place_settlement(nodeCoordinate)
         placed_settlement = node
 
-        val settlement_count = board.all_nodes().count { n -> n.has_city() && n.city?.color == player.color }
+        val settlement_count = board.allNodes().count { n -> n.hasCity() && n.city?.color == player.color }
         if (settlement_count == 2) {
             // A Player gets cards for the 2nd settlement he places
             val touching_hexes = node.hexes.keys.filterNot { it.resource == null }
@@ -444,7 +432,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         throw RuleException("Cannot roll dice during setup")
     }
 
-    override fun place_city(x: Int, y: Int, nodeNum: Int): Node {
+    override fun place_city(nodeCoordinate: NodeCoordinate): Node {
         throw RuleException("Cannot place city during setup")
     }
 

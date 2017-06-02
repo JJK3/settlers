@@ -21,6 +21,9 @@ data class HexCoordinate(val x: Int, val y: Int) {
                 Direction.RightUp -> right_up()
                 Direction.RightDown -> right_down()
             }
+
+    /** get the hex coordinate on the opposite side of the given edge. */
+    fun getOppositeHex(edge_num: EdgeNumber): HexCoordinate = move(edge_num.direction())
 }
 
 class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = HexCoordinate(-1, -1)) {
@@ -58,7 +61,7 @@ class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = 
 
     fun get_card(): Resource = resource ?: throw Exception("Cannot take card from a desert.")
     fun get_2_cards(): List<Resource> = listOf(get_card(), get_card())
-    fun nodes_with_cities() = nodes.filter(Node::has_city)
+    fun nodes_with_cities() = nodes.filter(Node::hasCity)
     fun nodes_with_cities(color: String) = nodes.filter { it.city?.color == color }
     /** is this hex on the outside edge of the map? */
     fun isOnOutside(): Boolean = edges.any(Edge::isOutsideEdge)
@@ -91,9 +94,6 @@ class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = 
         setNode(otherHex.node(otherEdgeNum.prevNode()), edgeNum.nextNode())
         setNode(otherHex.node(otherEdgeNum.nextNode()), edgeNum.prevNode())
     }
-
-    /** get the hex on the opposite side of the given edge. */
-    fun get_opposite_hex(edge_num: EdgeNumber): Hex? = edge(edge_num.opposite()).hexes.keys.find { it != this }
 
     fun nextEdge(edge: Edge) = edge(getEdgeIndex(edge).next())
     override fun equals(other: Any?): Boolean {

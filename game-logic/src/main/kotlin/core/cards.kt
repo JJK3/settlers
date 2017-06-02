@@ -13,7 +13,7 @@ abstract class ActionCard : Card {
     abstract fun use(turn: Turn)
 
     /** Are the card's actions finished? */
-    var is_done = true
+    var isDone = true
 
     /**
      * Does this card HAVE to be finished at the end of a turn?  Or can it
@@ -25,8 +25,7 @@ abstract class ActionCard : Card {
 data class ResourceCard(val resource: Resource) : Card
 abstract class DevelopmentCard : ActionCard(), Purchaseable
 /**
- * Allows a player to move the bandit.
- * NOTE: this can be played before the dice are rolled.
+ * Allows a player to move the bandit. This can be played before the dice are rolled.
  */
 class SoldierCard : DevelopmentCard() {
     override fun use(turn: Turn) {
@@ -83,7 +82,6 @@ class VictoryPointCard : DevelopmentCard() {
         turn.player.add_extra_victory_points(1)
     }
 }
-
 
 abstract class RandomBag<A> {
     private var items: List<A> = emptyList()

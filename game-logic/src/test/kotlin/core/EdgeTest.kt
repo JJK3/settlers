@@ -28,7 +28,7 @@ class EdgeTest {
     @Test fun testGetAdjecentEdges() {
         val hex = Hex(null, 5)
         hex.edges.forEach {
-            assertEquals(it.get_adjecent_edges().size, 2)
+            assertEquals(it.getAdjecentEdges().size, 2)
         }
     }
 }

@@ -1,7 +1,9 @@
 package player
 
 import core.Card
+import core.EdgeCoordinate
 import core.Hex
+import core.NodeCoordinate
 
 /**
  * Observer interface to watch the game.
@@ -85,7 +87,7 @@ interface GameObserver {
      * @param y
      * @param edge
      */
-    fun placed_road(player: PlayerReference, x: Int, y: Int, edge: Int) {
+    fun placed_road(player: PlayerReference, edgeCoordinate: EdgeCoordinate) {
     }
 
     /**
@@ -95,7 +97,7 @@ interface GameObserver {
      * @param y
      * @param node
      */
-    fun placed_settlement(player: PlayerReference, x: Int, y: Int, node: Int) {
+    fun placed_settlement(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
     }
 
     /**
@@ -105,7 +107,7 @@ interface GameObserver {
      * @param y
      * @param node
      */
-    fun placed_city(player: PlayerReference, x: Int, y: Int, node: Int) {
+    fun placed_city(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
     }
 
     fun player_has_longest_road(player: PlayerReference) {}

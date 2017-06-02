@@ -133,7 +133,7 @@ open class Admin(
         } else {
             //Give cards to all the players
             players.forEach { player ->
-                val cards: List<Card> = board.get_cards(sum, player.color).map { ResourceCard(it) }
+                val cards: List<Card> = board.getCards(sum, player.color).map { ResourceCard(it) }
                 if (cards.isNotEmpty()) {
                     player.add_cards(cards)
                     send_observer_msg { it.player_received_cards(player.info(), cards) }
@@ -184,15 +184,15 @@ open class Admin(
         log.debug("Checking for stalemate")
         players.forEach { player ->
             val color = player.color
-            val settlementSpots = board.get_valid_settlement_spots(true, color)
+            val settlementSpots = board.getValidSettlementSpots(true, color)
             if (Math.min(settlementSpots.size, player.countSettlementsLeft()) > 0) {
                 return false
             }
-            val citySpots = board.get_valid_city_spots(color).size
+            val citySpots = board.getValidCitySpots(color).size
             if (Math.min(citySpots, player.countCitiesLeft()) > 0) {
                 return false
             }
-            val roadSpots = board.get_valid_road_spots(color).size
+            val roadSpots = board.getValidRoadSpots(color).size
             if (Math.min(roadSpots, player.countRoadsLeft()) > 0) {
                 return false
             }
@@ -206,7 +206,7 @@ open class Admin(
     fun getScore(player: Player): Int {
         var score = 0
         getPlayer(player.color)?.let { p ->
-            if (board.has_longest_road(p.color)) {
+            if (board.hasLongestRoad(p.color)) {
                 score += 2
             }
             who_has_largest_army()?.let { largestArmy ->
@@ -214,8 +214,8 @@ open class Admin(
                     score += 2
                 }
             }
-            board.all_nodes().forEach { n ->
-                if (n.has_city() && n.city!!.color == p.color) {
+            board.allNodes().forEach { n ->
+                if (n.hasCity() && n.city!!.color == p.color) {
                     score += n.city!!.points
                 }
             }
@@ -299,7 +299,7 @@ open class Admin(
     }
 
     /** returns the player infos that have the longest road */
-    fun who_has_longest_road(): PlayerReference? = players.find { p -> board.has_longest_road(p.color) }?.info()
+    fun who_has_longest_road(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color) }?.info()
 
     private fun checkForLongestRoad() {
         who_has_longest_road()?.let { p ->
@@ -363,7 +363,7 @@ open class Admin(
         wantList.forEach { w: Resource ->
             giveList.forEach { g: Resource ->
                 result += Quote(null, g, 4, w, 1)
-                board.get_ports(player.color).forEach { p: Port ->
+                board.getPorts(player.color).forEach { p: Port ->
                     if ((p.kind != null && p.kind == g) || p.kind == null) {
                         val quote = Quote(null, g, p.rate, w, 1)
                         if (!result.contains(quote)) {

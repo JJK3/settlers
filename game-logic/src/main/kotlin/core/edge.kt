@@ -73,7 +73,7 @@ class Edge {
      * Get all the Edges touching this Edge.
      * This will return a Set , size bewteen 2 and 4.
      */
-    fun get_adjecent_edges(): Set<Edge> = nodes().flatMap(Node::edges).filter { it != this }.toSet()
+    fun getAdjecentEdges(): Set<Edge> = nodes().flatMap(Node::edges).filter { it != this }.toSet()
 
     /** Given one adjecent edge, get the edge(s) on the other side. */
     fun getOppositeEdges(adjecentEdge: Edge): Set<Edge> {
@@ -85,8 +85,8 @@ class Edge {
     /** Is this edge touching the outside of the board? */
     fun isOutsideEdge() = hexes.size < 2
 
-    fun has_road(): Boolean = this.road != null
-    fun has_port(): Boolean = nodes().all(Node::has_port)
+    fun hasRoad(): Boolean = this.road != null
+    fun hasPort(): Boolean = nodes().all(Node::hasPort)
     /** Get every mathing connected road */
     fun getCompleteRoad(): Set<Edge> {
         return getRoadHelper(HashSet())
@@ -95,7 +95,7 @@ class Edge {
     private fun getRoadHelper(visitedEdges: Set<Edge>): Set<Edge> {
         road?.let { road ->
             var roadEdges = visitedEdges + this
-            get_adjecent_edges().forEach { e ->
+            getAdjecentEdges().forEach { e ->
                 if (!roadEdges.contains(e)) {
                     if (road.color == e.road?.color) {
                         roadEdges += e.getRoadHelper(roadEdges)

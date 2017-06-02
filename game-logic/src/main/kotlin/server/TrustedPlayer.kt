@@ -107,19 +107,19 @@ class TrustedPlayer(
         super.update_board(b)
     }
 
-    override fun placed_road(player_reference: PlayerReference, x: Int, y: Int, edge: Int) {
-        original_player.placed_road(player_reference, x, y, edge)
-        super.placed_road(player_reference, x, y, edge)
+    override fun placed_road(player_reference: PlayerReference, edgeCoordinate: EdgeCoordinate) {
+        original_player.placed_road(player_reference, edgeCoordinate)
+        super.placed_road(player_reference, edgeCoordinate)
     }
 
-    override fun placed_settlement(player_reference: PlayerReference, x: Int, y: Int, node: Int) {
-        original_player.placed_settlement(player_reference, x, y, node)
-        super.placed_settlement(player_reference, x, y, node)
+    override fun placed_settlement(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        original_player.placed_settlement(player_reference, nodeCoordinate)
+        super.placed_settlement(player_reference, nodeCoordinate)
     }
 
-    override fun placed_city(player_reference: PlayerReference, x: Int, y: Int, node: Int) {
-        original_player.placed_city(player_reference, x, y, node)
-        super.placed_city(player_reference, x, y, node)
+    override fun placed_city(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        original_player.placed_city(player_reference, nodeCoordinate)
+        super.placed_city(player_reference, nodeCoordinate)
     }
 
     /*   override fun register_listener(listener: PlayerListener) {
