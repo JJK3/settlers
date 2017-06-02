@@ -67,7 +67,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
 
     open fun buy_development_card(): DevelopmentCard {
         check_state("Development card bought")
-        val card = admin.board.card_pile.get_card
+        val card = admin.board.developmentCards.grab()
         pay_for(card)
         player.add_cards(listOf(card))
         return card
@@ -127,7 +127,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         //Take a card from a player
         //the colors of the cities touching the  tile
         val touching_colors = _tile.nodes_with_cities().map { it.city!!.color }.distinct()
-        val touching_players = touching_colors.map { get_player(it).info() }.filterNot { it == player.info() }.toList()
+        val touching_players = touching_colors.map { get_player(it)!!.info() }.filterNot { it == player.info() }.toList()
 
         var player_to_take_from: PlayerInfo? = null
         if (!touching_players.isEmpty()) {
@@ -135,10 +135,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
                 player_to_take_from = touching_players.first()
             } else {
                 player_to_take_from = player.select_player(touching_players, 1)
-                if (player_to_take_from == null)
-                    break_rule("You must select a player")
             }
-
             take_random_card(player_to_take_from)
             admin.observers.forEach { it.player_stole_card(player.info(), player_to_take_from!!, 1) }
         }
@@ -148,6 +145,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         all_quotes += quote
     }
 
+    fun place_road(edgeCoordinate: EdgeCoordinate) = place_road(edgeCoordinate.hex.x, edgeCoordinate.hex.y, edgeCoordinate.edgeNumber.n)
     open fun place_road(x: Int, y: Int, edgeNum: Int) {
         log.debug("$player is trying to buy a road")
         if (admin.is_game_done()) break_rule("Game is Over")
@@ -177,7 +175,8 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     /** A helper method to get a player based on a color */
     fun get_player(color: String) = admin.get_player(color)
 
-    fun can_afford(pieces: List<Purchaseable>) = get_player(player.color).can_afford(pieces)
+    fun can_afford(pieces: List<Purchaseable>) = get_player(player.color)!!.can_afford(pieces)
+    fun place_settlement(coords:NodeCoordinate) = place_settlement(coords.hex.x, coords.hex.y, coords.nodeNumber.n)
     open fun place_settlement(x: Int, y: Int, nodeNum: Int): Node {
         log.debug("$player is trying to buy a settlement")
         if (admin.is_game_done()) break_rule("Game is Over")
@@ -199,6 +198,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
 
     fun get_valid_settlement_spots() = board.get_valid_settlement_spots(road_constraint, player.color)
     open fun get_valid_road_spots() = board.get_valid_road_spots(player.color)
+    fun place_city(nodeCoordinate: NodeCoordinate) = place_city(nodeCoordinate.hex.x, nodeCoordinate.hex.y, nodeCoordinate.nodeNumber.n)
     open fun place_city(x: Int, y: Int, nodeNum: Int): Node {
         log.debug("$player is trying to buy a city")
         if (admin.is_game_done()) {
@@ -317,7 +317,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
      * If player has no cards, do nothing
      */
     fun take_random_card(victim: PlayerInfo): Unit {
-        val real_victim = get_player(victim.color)
+        val real_victim = get_player(victim.color)!!
         val available_resources = real_victim.resource_cards()
         if (available_resources.isEmpty()) {
             log.debug("Could not take a random card from " + victim)
@@ -366,7 +366,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         var bidder_player: TrustedPlayer? = null
         if (quote.bidder != null) {
             bidder_player = get_player(quote.bidder.color)
-            if (bidder_player.countResources(quote.giveType) < quote.giveNum) {
+            if (bidder_player!!.countResources(quote.giveType) < quote.giveNum) {
                 break_rule("Bidder $bidder_player doesn't have enough cards for this quote: $quote")
             }
         }
@@ -398,6 +398,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
     var placed_settlement: Node? = null
     override val road_constraint = false
     override val is_setup = true
+
     override fun place_road(x: Int, y: Int, edgeNum: Int) {
         val e = board.getEdge(x, y, edgeNum)
         val validSpots = get_valid_road_spots()
@@ -411,6 +412,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
     }
 
     override fun get_valid_road_spots(): List<Edge> = board.get_valid_road_spots(player.color, placed_settlement)
+
     override fun place_settlement(x: Int, y: Int, nodeNum: Int): Node {
         if (placed_settlement != null)
             break_rule("Too many settlements placed in setup")
@@ -467,7 +469,7 @@ class Quote(
     override fun toString() = "[Quote $receiveNum $receiveType for $giveNum $giveType from $bidder]"
     fun validate(admin: Admin): Unit {
         if (bidder != null) {
-            val player = admin.get_player(bidder.color)
+            val player = admin.get_player(bidder.color)!!
             if (player.countResources(giveType) < giveNum) {
                 throw  IllegalStateException("Bidder $bidder does not have enough resources for this quote:${this} " +
                         "Bidder cards:${player.get_cards()}")
