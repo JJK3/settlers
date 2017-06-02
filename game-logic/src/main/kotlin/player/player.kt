@@ -1,5 +1,6 @@
-package core
+package player
 
+import core.*
 import org.apache.log4j.Logger
 import java.io.Serializable
 
@@ -7,7 +8,7 @@ interface PlayerListener {
     fun got_turn(turn: Any)
 }
 
-class Message(val message: String, val sender: PlayerInfo?) : java.io.Serializable
+class Message(val message: String, val sender: PlayerReference?) : Serializable
 abstract class Player(
         val first_name: String,
         val last_name: String,
@@ -57,7 +58,7 @@ abstract class Player(
         played_dev_cards += card
     }
 
-    fun info() = PlayerInfo(this)
+    fun info() = PlayerReference(this)
     open var color = _color
 
     private var internalBoard: Board? = null
@@ -74,7 +75,7 @@ abstract class Player(
     }
 
     /** Send a message to this player */
-    open fun chat_msg(player: PlayerInfo?, msg: String): Unit {
+    open fun chat_msg(player: PlayerReference?, msg: String): Unit {
         this.msgLog += Message(msg, player)
         log.debug("MESSAGE FOR:(*{full_name}:*{color})  *{msg}")
     }
@@ -104,7 +105,7 @@ abstract class Player(
      * [pieces] an Array of buyable piece classes (Cities, Settlements, etc.)
      */
     fun can_afford(pieces: List<Purchaseable>): Boolean {
-        val totalCost = pieces.flatMap { admin.get_price(it) }
+        val totalCost = pieces.flatMap { admin.getPrice(it) }
         try {
             removeCards(cards, totalCost)
             return true
@@ -193,7 +194,7 @@ abstract class Player(
         }
 
         /** This is only for server-side debugging */
-        //current_turn.class != ProxyObject and 
+        //currentTurn.class != ProxyObject and
         if (current_turn?.player?.color != this.color) {
             throw IllegalStateException(
                     "Turn's player ${current_turn?.player} does not match the actual player: ${this}")
@@ -201,7 +202,7 @@ abstract class Player(
     }
 
     /** This should be overidden in the implementations */
-    abstract fun get_user_quotes(player_info: PlayerInfo, wantList: List<Resource>,
+    abstract fun get_user_quotes(player_reference: PlayerReference, wantList: List<Resource>,
                                  giveList: List<Resource>): List<Quote>
 
     /**
@@ -224,9 +225,9 @@ abstract class Player(
      * Ask the player to choose a player among the given list
      * This method should be overridden
      */
-    abstract fun select_player(players: List<PlayerInfo>, reason: Int): PlayerInfo
+    abstract fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference
 
-    override fun player_moved_bandit(player_info: PlayerInfo, hex: Hex) {
+    override fun player_moved_bandit(player_reference: PlayerReference, hex: Hex) {
         board?.move_bandit(hex)
     }
 
@@ -243,7 +244,7 @@ abstract class Player(
      * [player] the player who won
      * [points] the number of points they won ,.
      */
-    override fun game_end(winner: PlayerInfo, points: Int) {
+    override fun game_end(winner: PlayerReference, points: Int) {
         game_finished = true
     }
 
@@ -266,8 +267,8 @@ abstract class Player(
      * [player] The player that placed the road
      * [x, y, edge] The edge coordinates
      */
-    override fun placed_road(player_info: PlayerInfo, x: Int, y: Int, edge: Int) {
-        board?.place_road(Road(player_info.color), x, y, edge)
+    override fun placed_road(player_reference: PlayerReference, x: Int, y: Int, edge: Int) {
+        board?.place_road(Road(player_reference.color), x, y, edge)
     }
 
     /**
@@ -275,8 +276,8 @@ abstract class Player(
      * [player] The player that placed the settlement
      * [x, y, node] The node coordinates
      */
-    override fun placed_settlement(player_info: PlayerInfo, x: Int, y: Int, node: Int) {
-        board?.place_city(Settlement(player_info.color), x, y, node)
+    override fun placed_settlement(player_reference: PlayerReference, x: Int, y: Int, node: Int) {
+        board?.place_city(Settlement(player_reference.color), x, y, node)
     }
 
     /**
@@ -284,8 +285,8 @@ abstract class Player(
      * [player] The player that placed the city
      * [x, y, node] The node coordinates
      */
-    override fun placed_city(player_info: PlayerInfo, x: Int, y: Int, node: Int) {
-        board?.place_city(City(player_info.color), x, y, node)
+    override fun placed_city(player_reference: PlayerReference, x: Int, y: Int, node: Int) {
+        board?.place_city(City(player_reference.color), x, y, node)
     }
 
     /** How many resource cards does this player have? */
@@ -328,19 +329,19 @@ abstract class Player(
  * This object is essentially a struct that lets other players refer to each other
  * This way, other players will only know so much information about each other
  */
-class PlayerInfo(player: Player) : Serializable {
+class PlayerReference(player: Player) : Serializable {
     val first_name: String = player.first_name
     val last_name: String = player.last_name
     val color = player.color
     val pic = player.pic
     val pic_square = player.pic_square
     fun full_name(): String = this.first_name + " " + this.last_name
-    override fun toString(): String = "<PlayerInfo name=\"${full_name()}\"  color=\"$color\" />"
+    override fun toString(): String = "<PlayerReference name=\"${full_name()}\"  color=\"$color\" />"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false
 
-        other as PlayerInfo
+        other as PlayerReference
 
         if (first_name != other.first_name) return false
         if (last_name != other.last_name) return false

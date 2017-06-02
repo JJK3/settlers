@@ -22,7 +22,7 @@ data class EdgeNumber(val n: Int) {
 
     init {
         if (!(0..5).contains(n)) {
-            throw IllegalArgumentException("Invalid EdgeNumber: ${n}")
+            throw IllegalArgumentException("Invalid EdgeNumber: $n")
         }
     }
 
@@ -73,7 +73,7 @@ class Edge {
      * Get all the Edges touching this Edge.
      * This will return a Set , size bewteen 2 and 4.
      */
-    fun get_adjecent_edges(): Set<Edge> = nodes().flatMap { it.edges() }.filter { it != this }.toSet()
+    fun get_adjecent_edges(): Set<Edge> = nodes().flatMap(Node::edges).filter { it != this }.toSet()
 
     /** Given one adjecent edge, get the edge(s) on the other side. */
     fun getOppositeEdges(adjecentEdge: Edge): Set<Edge> {
@@ -86,7 +86,7 @@ class Edge {
     fun isOutsideEdge() = hexes.size < 2
 
     fun has_road(): Boolean = this.road != null
-    fun has_port(): Boolean = nodes().all { it.has_port() }
+    fun has_port(): Boolean = nodes().all(Node::has_port)
     /** Get every mathing connected road */
     fun getCompleteRoad(): Set<Edge> {
         return getRoadHelper(HashSet())

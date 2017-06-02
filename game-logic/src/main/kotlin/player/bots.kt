@@ -1,4 +1,6 @@
-package core
+package player
+
+import core.*
 
 //only abstract since i haven't finished this yet
 abstract class Bot(first_name: String,
@@ -18,7 +20,7 @@ interface SetupTurnStrategy {
 
 interface MoveBanditStrategy {
     fun move_bandit(old_hex: Hex): Hex
-    fun select_player(players: List<PlayerInfo>, reason: Int): PlayerInfo
+    fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference
 }
 
 class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
@@ -83,7 +85,7 @@ class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
     }
 
     /** Ask the player to choose a player among the given list */
-    override fun select_player(players: List<PlayerInfo>, reason: Int): PlayerInfo {
+    override fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference {
         return players.find { it.color != player.color } ?:
                 throw  IllegalStateException("I'm being forced to select myself")
     }
@@ -99,7 +101,8 @@ class RandomPlayer(first_name: String,
 
     val moveBanditStrategy = TakeCardsFromAnyone(this)
     override fun move_bandit(old_hex: Hex): Hex = moveBanditStrategy.move_bandit(old_hex)
-    override fun select_player(players: List<PlayerInfo>, reason: Int): PlayerInfo = moveBanditStrategy.select_player(
+    override fun select_player(players: List<PlayerReference>,
+                               reason: Int): PlayerReference = moveBanditStrategy.select_player(
             players, reason)
 
     val setupTurnStrategy = HighestProbablitySetup(this)
@@ -174,7 +177,7 @@ class RandomPlayer(first_name: String,
     }
 
     /** This bot will offer trades if it has more than 4 of 1 kind of card. */
-    override fun get_user_quotes(player_info: PlayerInfo, wantList: List<Resource>,
+    override fun get_user_quotes(player_reference: PlayerReference, wantList: List<Resource>,
                                  giveList: List<Resource>): List<Quote> {
         var result: List<Quote> = emptyList()
         wantList.forEach { w ->
@@ -219,7 +222,8 @@ class SinglePurchasePlayer(first_name: String,
 
     val moveBanditStrategy = TakeCardsFromAnyone(this)
     override fun move_bandit(old_hex: Hex): Hex = moveBanditStrategy.move_bandit(old_hex)
-    override fun select_player(players: List<PlayerInfo>, reason: Int): PlayerInfo = moveBanditStrategy.select_player(
+    override fun select_player(players: List<PlayerReference>,
+                               reason: Int): PlayerReference = moveBanditStrategy.select_player(
             players, reason)
 
     val setupTurnStrategy = HighestProbablitySetup(this)
@@ -247,7 +251,7 @@ class SinglePurchasePlayer(first_name: String,
                             log.debug("Bot " + this + " is attempting to trade")
                             var cardsIDontNeed = resource_cards().map { it.resource }
                             if (desired_piece != null) {
-                                val price = admin.get_price(desired_piece!!)
+                                val price = admin.getPrice(desired_piece!!)
                                 cardsIDontNeed = cardsIDontNeed.diff_without_unique(price)
                             }
                             cardsIDontNeed = cardsIDontNeed.diff_without_unique(cards_needed)
@@ -284,7 +288,7 @@ class SinglePurchasePlayer(first_name: String,
 
     // Ask this bot for a trade
     // This bot will try to get cards it needs for its desired piece
-    override fun get_user_quotes(player_info: PlayerInfo, wantList: List<Resource>,
+    override fun get_user_quotes(player_reference: PlayerReference, wantList: List<Resource>,
                                  giveList: List<Resource>): List<Quote> {
         var result: List<Quote> = emptyList()
         val iWant = giveList.intersect(cards_needed)
@@ -357,7 +361,7 @@ class SinglePurchasePlayer(first_name: String,
     // the desired_piece
     // Class -> Array of Cards
     fun calculate_cards_needed(piece: Purchaseable): List<Resource> {
-        val price = admin.get_price(piece)
+        val price = admin.getPrice(piece)
         return price.diff_without_unique(resource_cards().map { it.resource })
     }
 

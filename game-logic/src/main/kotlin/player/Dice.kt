@@ -1,5 +1,7 @@
-package core
+package player
 
+import core.Hex
+import core.Node
 import java.util.*
 
 object Dice {

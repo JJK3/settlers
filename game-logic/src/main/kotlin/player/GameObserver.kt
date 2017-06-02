@@ -1,5 +1,7 @@
-package core
+package player
 
+import core.Card
+import core.Hex
 
 /**
  * Observer interface to watch the game.
@@ -12,7 +14,7 @@ interface GameObserver {
      * @param player the player that recieved the cards
      * @param cards a list of Card Classes
      */
-    fun player_received_cards(player: PlayerInfo, cards: List<Card>): Unit {
+    fun player_received_cards(player: PlayerReference, cards: List<Card>): Unit {
     }
 
     /**
@@ -20,7 +22,7 @@ interface GameObserver {
      * @param player the acting player
      * @param roll A tuple of the numbers that were rolled
      */
-    fun player_rolled(player: PlayerInfo, roll: Pair<Int, Int>): Unit {
+    fun player_rolled(player: PlayerReference, roll: Pair<Int, Int>): Unit {
     }
 
     /**
@@ -29,7 +31,7 @@ interface GameObserver {
      * @param victim the player who lost cards
      * @param num_cards the number of cards stolen
      */
-    fun player_stole_card(theif: PlayerInfo, victim: PlayerInfo, num_cards: Int): Unit {
+    fun player_stole_card(theif: PlayerReference, victim: PlayerReference, num_cards: Int): Unit {
     }
 
     /**
@@ -43,14 +45,14 @@ interface GameObserver {
      * @param winner the player who won
      * @param points the number of points they won ,.
      */
-    fun game_end(winner: PlayerInfo, points: Int): Unit {
+    fun game_end(winner: PlayerReference, points: Int): Unit {
     }
 
     /**
      * Inform this observer that a player has joined the game.
      * @param player the player that joined
      */
-    fun player_joined(player: PlayerInfo) {
+    fun player_joined(player: PlayerReference) {
     }
 
     /**
@@ -58,7 +60,7 @@ interface GameObserver {
      * @param player The player who's turn it is
      * @param turn_class
      */
-    fun get_turn(player: PlayerInfo, turn_class: Class<Turn>) {
+    fun get_turn(player: PlayerReference, turn_class: Class<Turn>) {
     }
 
     /**
@@ -73,7 +75,7 @@ interface GameObserver {
      * @param player the player that moved the bandit
      * @param hex the hex that the bandit is now on.
      */
-    fun player_moved_bandit(player: PlayerInfo, hex: Hex) {
+    fun player_moved_bandit(player: PlayerReference, hex: Hex) {
     }
 
     /**
@@ -83,7 +85,7 @@ interface GameObserver {
      * @param y
      * @param edge
      */
-    fun placed_road(player: PlayerInfo, x: Int, y: Int, edge: Int) {
+    fun placed_road(player: PlayerReference, x: Int, y: Int, edge: Int) {
     }
 
     /**
@@ -93,7 +95,7 @@ interface GameObserver {
      * @param y
      * @param node
      */
-    fun placed_settlement(player: PlayerInfo, x: Int, y: Int, node: Int) {
+    fun placed_settlement(player: PlayerReference, x: Int, y: Int, node: Int) {
     }
 
     /**
@@ -103,10 +105,10 @@ interface GameObserver {
      * @param y
      * @param node
      */
-    fun placed_city(player: PlayerInfo, x: Int, y: Int, node: Int) {
+    fun placed_city(player: PlayerReference, x: Int, y: Int, node: Int) {
     }
 
-    fun player_has_longest_road(player: PlayerInfo) {}
-    fun player_has_largest_army(player: PlayerInfo) {}
+    fun player_has_longest_road(player: PlayerReference) {}
+    fun player_has_largest_army(player: PlayerReference) {}
 
 }

@@ -11,12 +11,12 @@ class RuleException(msg: String) : Exception(msg)
  */
 open class Board(val should_enforce_bandit: Boolean = true) {
     companion object {
-        var log = Logger.getLogger(javaClass)
+        var log = Logger.getLogger(this::class.java)
     }
 
     val tiles = HashMap<HexCoordinate, Hex>()
     var developmentCards = DevelopmentCardBag()
-    private val longestRoadAuthority = LongestRoadAnalyzer(this)
+    private val longestRoadAuthority = LongestRoadDetector(this)
     fun all_nodes(): Set<Node> = tiles.values.flatMap { it.nodes.toList() }.toSet()
     fun nodes() = all_nodes()
     fun all_edges() = tiles.values.flatMap { it.edges.toList() }.toSet()
@@ -32,7 +32,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
 
     fun getTile(coord: HexCoordinate): Hex? = tiles[coord]
     fun getTileWithError(x: Int, y: Int): Hex = getTile(x, y) ?: throw IllegalArgumentException(
-            "Hex not found: (" + x + "," + y + ")")
+            "Hex not found: ($x,$y)")
 
     /**
      * Get the Node object at the given coordinates
@@ -70,17 +70,16 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     fun has_longest_road(color: String): Boolean = longestRoadAuthority.hasLongestRoad(color)
 
     fun getLongestRoad(edge: Edge): List<Edge> = longestRoadAuthority.getLongestRoad(edge)
-
     /** Port nodes controlled by the given player. */
     fun port_nodes(color: String) =
             all_nodes().filter { n -> n.has_city() && n.has_port() && n.city?.color == color }.toList()
 
     /** Ports controlled by the given player */
-    fun get_ports(color: String): List<Port> = port_nodes(color).map { it.port }.filterNotNull().toList()
+    fun get_ports(color: String): List<Port> = port_nodes(color).map(Node::port).filterNotNull().toList()
 
     /** Gets a list of cards, that the given player should receive */
     fun get_cards(number: Int, color: String): List<Resource> {
-        var valid_hexes = tiles.values.filter { t ->
+        val valid_hexes = tiles.values.filter { t ->
             t.number == number && !t.has_bandit && t.resource != null
         }
         return valid_hexes.flatMap { hex ->
@@ -97,8 +96,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     /** A helper to wrap edge mutations. */
     private fun edge_updater(tileX: Int, tileY: Int, edgeNum: Int, visitor: (Edge) -> Unit): Edge {
         synchronized(this) {
-            var t = getTileWithError(tileX, tileY)
-            var edge = t.edges[edgeNum]
+            val edge = getTileWithError(tileX, tileY).edges[edgeNum]
             visitor.invoke(edge)
             return edge
         }
@@ -149,18 +147,17 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      * Move the bandit to a  hex
      * @return the old hex that the bandit was on.
      */
-    fun move_bandit(_hex: Hex): Hex {
+    fun move_bandit(hex: Hex): Hex {
         synchronized(this) {
-            val current_bandit_hex = tiles.values.find { it.has_bandit } ?: throw RuleException(
+            val currentBanditHex = tiles.values.find(Hex::has_bandit) ?: throw RuleException(
                     "Board does not currently have a bandit ${this}")
 
-            if (current_bandit_hex == _hex) {
+            if (currentBanditHex == hex) {
                 throw RuleException("Bandit cannot be moved to the Tile it's already on")
             }
-            val local_tile = getTile(_hex.coords.x, _hex.coords.y) ?:
-                    throw  IllegalArgumentException(" Hex was not found on the Board:" + _hex)
-            setBandit(local_tile)
-            return current_bandit_hex
+            val tile = getTile(hex.coords) ?: throw IllegalArgumentException("Hex was not found on the Board:$hex")
+            setBandit(tile)
+            return currentBanditHex
         }
     }
 
@@ -199,11 +196,11 @@ open class Board(val should_enforce_bandit: Boolean = true) {
             var result: List<Edge> = emptyList()
             all_nodes().forEach { n ->
                 if (n.has_city() && n.city!!.color == road_color) {
-                    result = result + (n.edges().filterNot { it.has_road() })
+                    result += (n.edges().filterNot(Edge::has_road))
                 } else if (!n.has_city()) {
                     n.edges().forEach { edge ->
                         if (edge.has_road() && edge.road!!.color == road_color) {
-                            result = result + (n.edges().filterNot { it.has_road() })
+                            result += (n.edges().filterNot(Edge::has_road))
                         }
                     }
                 }
@@ -257,7 +254,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
             3 -> hex.coords.down()
             4 -> hex.coords.left_down()
             5 -> hex.coords.left_up()
-            else -> throw IllegalArgumentException("bad edge: ${edge}")
+            else -> throw IllegalArgumentException("bad edge: $edge")
         }
         return getTile(coords.x, coords.y)
     }

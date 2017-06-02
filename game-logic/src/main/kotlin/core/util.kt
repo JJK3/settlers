@@ -1,11 +1,9 @@
 package core
 
 import java.util.*
-import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
-class IllegalArgumentException(msg: String) : Exception(msg) {}
+class IllegalArgumentException(msg: String) : Exception(msg)
 object Util {
     fun while_with_timeout(timeout: Long = 10000, sleep_millis: Long = 100, test: () -> Boolean) {
         val maxTimestamp = System.currentTimeMillis() + timeout

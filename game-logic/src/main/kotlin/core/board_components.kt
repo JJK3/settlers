@@ -34,24 +34,3 @@ class Port(val kind: Resource?, val rate: Int)
 enum class Resource {
     Ore, Wood, Sheep, Brick, Wheat
 }
-
-abstract class RandomBag<A> {
-    private var items: List<A> = emptyList()
-    private val rand = Random(System.currentTimeMillis())
-    fun add(item: A) {
-        items += item
-    }
-
-    fun grab(): A {
-        if (items.isEmpty()) throw IllegalStateException("Cannot grab from an empty bag")
-        val i = rand.nextInt(items.size)
-        return pick_and_remove(i)
-    }
-
-    fun next() = pick_and_remove(0)
-    fun pick_and_remove(i: Int): A {
-        val grabbedItem = items[i]
-        items = items.filterIndexed { index, _ -> index != i }
-        return grabbedItem
-    }
-}

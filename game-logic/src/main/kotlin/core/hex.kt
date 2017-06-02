@@ -58,13 +58,13 @@ class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = 
 
     fun get_card(): Resource = resource ?: throw Exception("Cannot take card from a desert.")
     fun get_2_cards(): List<Resource> = listOf(get_card(), get_card())
-    fun nodes_with_cities() = nodes.filter { it.has_city() }
+    fun nodes_with_cities() = nodes.filter(Node::has_city)
     fun nodes_with_cities(color: String) = nodes.filter { it.city?.color == color }
     /** is this hex on the outside edge of the map? */
-    fun isOnOutside(): Boolean = edges.any { it.isOutsideEdge() }
+    fun isOnOutside(): Boolean = edges.any(Edge::isOutsideEdge)
 
-    fun node(number: NodeNumber): Node = nodes.get(number.n)
-    fun edge(number: EdgeNumber): Edge = edges.get(number.n)
+    fun node(number: NodeNumber): Node = nodes[number.n]
+    fun edge(number: EdgeNumber): Edge = edges[number.n]
     fun adjecentEdges(node: NodeNumber) = listOf(edge(node.prevEdge())) + edge(node.nextEdge())
     fun adjecentNodes(edge: EdgeNumber) = listOf(node(edge.prevNode())) + node(edge.nextNode())
     fun setNode(node: Node, coord: NodeNumber) {
@@ -81,7 +81,7 @@ class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = 
     fun getEdgeIndex(edge: Edge) = EdgeNumber(edges.indexOf(edge))
     fun replaceEdge(current: Edge, new: Edge) {
         if (!edges.contains(current)) {
-            throw IllegalArgumentException("${current} is not in ${edges}")
+            throw IllegalArgumentException("$current is not in $edges")
         }
         val otherHex = new.hexes.keys.first()
         val edgeNum = current.hexes[this]!!

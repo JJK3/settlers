@@ -1,6 +1,6 @@
 package core
 
-class LongestRoadAnalyzer(val board: Board) {
+class LongestRoadDetector(val board: Board) {
 
     private data class LongestRoadResult(val longestRoad: List<Edge>, val examinedEdges: Set<Edge>) {
         fun plus(edge: Edge) = LongestRoadResult(longestRoad + edge, examinedEdges + edge)

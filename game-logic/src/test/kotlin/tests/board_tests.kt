@@ -1,8 +1,8 @@
 package core
 
-import board.SquareBoard
-import board.StandardBoard
-import board.TileBag
+import core.SquareBoard
+import core.StandardBoard
+import core.TileBag
 import org.junit.Assert.*
 import org.junit.Test
 

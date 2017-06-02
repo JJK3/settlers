@@ -1,6 +1,5 @@
-package board
+package core
 
-import core.*
 import java.util.*
 
 /** The randomized bag of tile hexes and ports */
@@ -44,7 +43,6 @@ open class NumberBag : RandomBag<Int>() {
 
 /** The Standard Board */
 open class StandardBoard : Board(true) {
-
     init {
         var coords: List<HexCoordinate> = listOf(HexCoordinate(-2, 1), HexCoordinate(-2, 2), HexCoordinate(-2, 3),
                 HexCoordinate(-1, 0), HexCoordinate(-1, 1), HexCoordinate(-1, 2), HexCoordinate(-1, 3),

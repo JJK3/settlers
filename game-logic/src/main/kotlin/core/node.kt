@@ -12,14 +12,13 @@ package core
  *    3---------2
  */
 data class NodeNumber(val n: Int) {
-
     companion object {
         val ALL = (0..5).map(::NodeNumber)
     }
 
     init {
         if (!(0..5).contains(n)) {
-            throw IllegalArgumentException("Invalid NodeNumber: ${n}")
+            throw IllegalArgumentException("Invalid NodeNumber: $n")
         }
     }
 
@@ -39,19 +38,19 @@ data class NodeCoordinate(val hex: HexCoordinate, val nodeNumber: NodeNumber) {
 }
 
 /** This Corresponds to a node on the board where settlements and cities can be placed. */
-class Node() {
+class Node {
     var city: City? = null
     var port: Port? = null
     var hexes: Map<Hex, NodeNumber> = emptyMap()
     fun edges() = hexes.flatMap { it.key.adjecentEdges(it.value) }.toSet()
     fun coords() = hexes.map { NodeCoordinate(it.key.coords, it.value) }.first()
     /** The Array of adjecent nodes */
-    fun get_adjecent_nodes() = edges().flatMap { it.nodes() }.toSet().filter { it != this }
+    fun get_adjecent_nodes() = edges().flatMap(Edge::nodes).toSet().filter { it != this }
 
     fun has_city(): Boolean = this.city != null
     fun has_port(): Boolean = this.port != null
     override fun toString(): String {
-        return "Node(city=$city, port=$port, coords=${hexes})"
+        return "Node(city=$city, port=$port, coords=$hexes)"
     }
 
     override fun equals(other: Any?): Boolean {

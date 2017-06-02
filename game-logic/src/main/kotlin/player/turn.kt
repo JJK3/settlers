@@ -1,6 +1,8 @@
-package core
+package player
 
+import core.*
 import org.apache.log4j.Logger
+import server.TrustedPlayer
 
 enum class TurnState(val desc: String, val is_terminal_state: Boolean) {
 
@@ -57,7 +59,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     var rule_error: Exception? = null
     open fun roll_dice(): Pair<Int, Int> {
         assert_not_done()
-        var result = admin.roll_dice()
+        var result = admin.rollDice()
         set_state(TurnState.RolledDice)
         return result
     }
@@ -129,7 +131,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         val touching_colors = _tile.nodes_with_cities().map { it.city!!.color }.distinct()
         val touching_players = touching_colors.map { get_player(it)!!.info() }.filterNot { it == player.info() }.toList()
 
-        var player_to_take_from: PlayerInfo? = null
+        var player_to_take_from: PlayerReference? = null
         if (!touching_players.isEmpty()) {
             if (touching_players.size == 1) {
                 player_to_take_from = touching_players.first()
@@ -169,14 +171,14 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         purchase(road, should_pay)
         board.place_road(road, x, y, edgeNum)
         admin.observers.forEach { it.placed_road(player.info(), x, y, edgeNum) }
-        admin.check_for_winner()
+        admin.checkForWinner()
     }
 
     /** A helper method to get a player based on a color */
-    fun get_player(color: String) = admin.get_player(color)
+    fun get_player(color: String) = admin.getPlayer(color)
 
     fun can_afford(pieces: List<Purchaseable>) = get_player(player.color)!!.can_afford(pieces)
-    fun place_settlement(coords:NodeCoordinate) = place_settlement(coords.hex.x, coords.hex.y, coords.nodeNumber.n)
+    fun place_settlement(coords: NodeCoordinate) = place_settlement(coords.hex.x, coords.hex.y, coords.nodeNumber.n)
     open fun place_settlement(x: Int, y: Int, nodeNum: Int): Node {
         log.debug("$player is trying to buy a settlement")
         if (admin.is_game_done()) break_rule("Game is Over")
@@ -192,7 +194,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         board.place_city(sett, x, y, nodeNum)
         log.info("Settlement Placed by " + player + " on " + x + "," + y + "," + nodeNum)
         admin.observers.forEach { it.placed_settlement(player.info(), x, y, nodeNum) }
-        admin.check_for_winner()
+        admin.checkForWinner()
         return node
     }
 
@@ -218,7 +220,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
                 board.place_city(city, x, y, nodeNum)
                 log.info("City Placed by $player on $x,$y,$nodeNum")
                 admin.observers.forEach { it.placed_city(player.info(), x, y, nodeNum) }
-                admin.check_for_winner()
+                admin.checkForWinner()
             } else {
                 break_rule("Invalid City Placement.  Settlement has wrong color at $x $y $nodeNum. " +
                         "$player expected:${player.color} was:${node.city?.color}")
@@ -281,7 +283,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
             else ->
                 Turn.DELETE_REASON_OTHER
         }
-        player.del_cards(admin.get_price(piece).map { ResourceCard(it) }, reason)
+        player.del_cards(admin.getPrice(piece).map { ResourceCard(it) }, reason)
     }
 
     open fun done() {
@@ -316,7 +318,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
      * Take a random card from another player and add it to your own cards
      * If player has no cards, do nothing
      */
-    fun take_random_card(victim: PlayerInfo): Unit {
+    fun take_random_card(victim: PlayerReference): Unit {
         val real_victim = get_player(victim.color)!!
         val available_resources = real_victim.resource_cards()
         if (available_resources.isEmpty()) {
@@ -324,7 +326,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
             return
         }
         val res = available_resources.pick_random()
-        real_victim.del_cards(listOf(res), Turn.DELETE_REASON_OTHER)
+        real_victim.del_cards(listOf(res), Turn.Companion.DELETE_REASON_OTHER)
         player.add_cards(listOf(res))
     }
 
@@ -344,7 +346,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         card.use(this)
         player.del_cards(listOf(card), Turn.DELETE_REASON_OTHER)
         player.played_dev_card(card)
-        admin.check_for_winner()
+        admin.checkForWinner()
     }
 
     /**
@@ -363,7 +365,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         if (player.countResources(quote.receiveType) < quote.receiveNum) {
             break_rule("You don't have enough cards for this quote: " + quote)
         }
-        var bidder_player: TrustedPlayer? = null
+        var bidder_player: Player? = null
         if (quote.bidder != null) {
             bidder_player = get_player(quote.bidder.color)
             if (bidder_player!!.countResources(quote.giveType) < quote.giveNum) {
@@ -460,7 +462,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
  * The Trader then accepts the quote afterwards
  */
 class Quote(
-        val bidder: PlayerInfo?,
+        val bidder: PlayerReference?,
         val receiveType: Resource,
         val receiveNum: Int,
         val giveType: Resource,
@@ -469,7 +471,7 @@ class Quote(
     override fun toString() = "[Quote $receiveNum $receiveType for $giveNum $giveType from $bidder]"
     fun validate(admin: Admin): Unit {
         if (bidder != null) {
-            val player = admin.get_player(bidder.color)!!
+            val player = admin.getPlayer(bidder.color)!!
             if (player.countResources(giveType) < giveNum) {
                 throw  IllegalStateException("Bidder $bidder does not have enough resources for this quote:${this} " +
                         "Bidder cards:${player.get_cards()}")
