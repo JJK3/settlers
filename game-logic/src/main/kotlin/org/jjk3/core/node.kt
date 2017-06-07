@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 /**
  * Node numbers
@@ -37,7 +37,7 @@ data class NodeCoordinate(val hex: HexCoordinate, val nodeNumber: NodeNumber) {
     constructor(x: Int, y: Int, nodeNumber: Int) : this(HexCoordinate(x, y), NodeNumber(nodeNumber))
 }
 
-/** This Corresponds to a node on the board where settlements and cities can be placed. */
+/** This Corresponds to a node on the org.jjk3.board where settlements and cities can be placed. */
 class Node {
     var city: City? = null
     var port: Port? = null

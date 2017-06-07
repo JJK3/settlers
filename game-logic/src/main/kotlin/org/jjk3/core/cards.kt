@@ -1,8 +1,8 @@
-package core
+package org.jjk3.core
 
 import org.apache.log4j.Logger
-import player.Admin
-import player.Turn
+import org.jjk3.player.Admin
+import org.jjk3.player.Turn
 import java.util.*
 
 interface Card
@@ -28,7 +28,7 @@ abstract class DevelopmentCard : ActionCard(), Purchaseable {
 }
 
 /**
- * Allows a player to move the bandit. This can be played before the dice are rolled.
+ * Allows a org.jjk3.player to move the bandit. This can be played before the dice are rolled.
  */
 class SoldierCard : DevelopmentCard() {
     override fun use(turn: Turn) {
@@ -41,7 +41,7 @@ class SoldierCard : DevelopmentCard() {
     }
 }
 
-/** Allows a player to build 2 roads in his turn */
+/** Allows a org.jjk3.player to build 2 roads in his turn */
 class RoadBuildingCard : DevelopmentCard() {
     override fun use(turn: Turn) {
         turn.player.give_free_roads(2)

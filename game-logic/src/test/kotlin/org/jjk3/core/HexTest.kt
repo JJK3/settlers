@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

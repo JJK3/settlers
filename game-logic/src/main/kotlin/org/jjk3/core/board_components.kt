@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 interface Purchaseable {
     val price: List<Resource>

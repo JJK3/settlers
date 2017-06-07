@@ -1,7 +1,7 @@
-package player
+package org.jjk3.player
 
 import com.google.common.util.concurrent.AtomicLongMap
-import core.*
+import org.jjk3.core.*
 import org.apache.log4j.Logger
 import java.util.*
 import java.util.concurrent.Future
@@ -137,10 +137,10 @@ open class Admin(
         return roll
     }
 
-    /** Get a player based on a color.  Returns null if not found. */
+    /** Get a org.jjk3.player based on a color.  Returns null if not found. */
     fun getPlayer(color: String): Player? = players.find { it.color == color }
 
-    /** Register a player or players , this game. */
+    /** Register a org.jjk3.player or players , this game. */
     open fun register(registrant: Player): Unit {
         if (!is_game_in_progress()) {
             registrant.board = board
@@ -196,7 +196,7 @@ open class Admin(
         return true
     }
 
-    /** Get the score of the given player */
+    /** Get the score of the given org.jjk3.player */
     fun getScore(player: Player): Int {
         var score = 0
         getPlayer(player.color)?.let { p ->
@@ -220,13 +220,13 @@ open class Admin(
     fun getScores() = players.map { p: Player -> Pair(p.info(), getScore(p)) }.toMap()
     fun countResourceCards(playerReference: PlayerReference): Int {
         val player: Player = getPlayer(playerReference.color) ?: throw  IllegalArgumentException(
-                "Could not find player , color:${playerReference.color} in $players")
+                "Could not find org.jjk3.player , color:${playerReference.color} in $players")
         return Resource.values().map { player.countResources(it) }.sum()
     }
 
     fun count_all_resource_cards() = players.map { p -> listOf(p.info(), countResourceCards(p.info())) }
     fun count_dev_cards(playerReference: PlayerReference) = getPlayer(playerReference.color)?.count_dev_cards()
-    /** Finds the player , the largest army, or nil if no one has it. */
+    /** Finds the org.jjk3.player , the largest army, or nil if no one has it. */
     fun who_has_largest_army(): PlayerReference? {
         //The largest randomNumber of soldier cards
         val highest_count = players.map { countSoliders(it) }.max() ?: 0
@@ -259,13 +259,13 @@ open class Admin(
 
     /**
      * Does this game have a winner yet.
-     * If so, return the player that one, nil otherwise.
+     * If so, return the org.jjk3.player that one, nil otherwise.
      */
     fun getWinner(): Player? = players.find { getScore(it) >= max_points }
 
     /**
      * An iterator for all other players
-     * [player] the player to exclude
+     * [player] the org.jjk3.player to exclude
      */
     fun other_players(player: PlayerReference): List<Player> = players.filter { it.color != player.color }
 
@@ -279,7 +279,7 @@ open class Admin(
                 Pair("longest_road", who_has_longest_road()))
     }
 
-    /** returns the player infos that have the longest road */
+    /** returns the org.jjk3.player infos that have the longest road */
     fun who_has_longest_road(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color) }?.info()
 
     private fun checkForLongestRoad() {
@@ -302,10 +302,10 @@ open class Admin(
     /*
     * Gets a List of quotes from the bank and other users
     * Optionally takes a block that iterates through each quote as they come
-    * [player] The player asking for quotes
+    * [org.jjk3.player] The org.jjk3.player asking for quotes
     */
     fun get_quotes(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
-        //var result = ThreadSafeList.(get_quotes_from_bank(player, wantList, giveList))
+        //var result = ThreadSafeList.(get_quotes_from_bank(org.jjk3.player, wantList, giveList))
         var result = get_quotes_from_bank(player, wantList, giveList)
 
         //Add user quotes
@@ -327,7 +327,7 @@ open class Admin(
         return result
     }
 
-    /** Returns a List of Quote objects from the bank for a specific player */
+    /** Returns a List of Quote objects from the bank for a specific org.jjk3.player */
     fun get_quotes_from_bank(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
         //start , the bank's 4:1 offer
         var result: List<Quote> = emptyList()
@@ -355,20 +355,20 @@ open class Admin(
     fun giveSetupTurn(player: Player): Turn = give_turn(SetupTurn(this, player, board), player)
     fun giveNormalTurn(player: Player): Turn = give_turn(Turn(this, player, board), player)
     /**
-     * A helper method to give a turn to a player.
+     * A helper method to give a turn to a org.jjk3.player.
      * This method returns when the turn is finished.  It shouldn't throw any errors.
      * Any errors that occur during the turn should be handled here.
      */
     open fun give_turn(turn: Turn, player: Player): Turn {
-        if (!is_game_done()) { //We need to check for the winner before we give the next player a turn
+        if (!is_game_done()) { //We need to check for the winner before we give the next org.jjk3.player a turn
             log.debug("**Giving $turn to $player")
             current_turn_obj = turn
 
             try {
-                //send_observer_msg { it.get_turn(player.info, turn.getClass) }
-                //Give the turn to the player
+                //send_observer_msg { it.get_turn(org.jjk3.player.info, turn.getClass) }
+                //Give the turn to the org.jjk3.player
                 turn.state = TurnState.Active
-                log.debug("player is taking turn: " + player)
+                log.debug("org.jjk3.player is taking turn: " + player)
                 player.take_turn(turn, turn.is_setup)
                 if (!turn.isDone()) {
                     log.warn("Turn SHOULD BE DONE.  it's:${turn.state}    $player   $turn")
@@ -437,24 +437,24 @@ open class Admin(
 
 /*    include UsesGameState
 
-    //An error occured on this player's turn.  KICK 'EM OUT! and replace them , a bot.
-    fun kickOut(player, reason_or_error)={
-      //player should always be a trusted player
-      raise AdminError.("Server error.  kickOut was not called , a trusted player object") unless player.is_a?(TrustedPlayer)
+    //An error occured on this org.jjk3.player's turn.  KICK 'EM OUT! and replace them , a bot.
+    fun kickOut(org.jjk3.player, reason_or_error)={
+      //org.jjk3.player should always be a trusted org.jjk3.player
+      raise AdminError.("Server error.  kickOut was not called , a trusted org.jjk3.player object") unless org.jjk3.player.is_a?(TrustedPlayer)
       if (reason_or_error.is_a?(Exception))
-        log.error("REPLACING PLAYER WITH BOT: //{player}. //{reason_or_error}")
+        log.error("REPLACING PLAYER WITH BOT: //{org.jjk3.player}. //{reason_or_error}")
         log.error("//{reason_or_error}\n     //{reason_or_error.backtrace.join("\n     ")}")
       else
-        log.error("REPLACING PLAYER WITH BOT: //{player}. //{reason_or_error}")
+        log.error("REPLACING PLAYER WITH BOT: //{org.jjk3.player}. //{reason_or_error}")
       }
-      kicked_out << player
-      bot_player = SinglePurchasePlayer.copy(player, "Robo", "", self)
-      trusted_bot = TrustedPlayer.(self, bot_player, log, player.color, player.piecesLeft(City), player.piecesLeft(Settlement), player.piecesLeft(Road), player.cards, player.get_played_dev_cards)
+      kicked_out << org.jjk3.player
+      bot_player = SinglePurchasePlayer.copy(org.jjk3.player, "Robo", "", self)
+      trusted_bot = TrustedPlayer.(self, bot_player, log, org.jjk3.player.color, org.jjk3.player.piecesLeft(City), org.jjk3.player.piecesLeft(Settlement), org.jjk3.player.piecesLeft(Road), org.jjk3.player.cards, org.jjk3.player.get_played_dev_cards)
 
-      replace_player(player, trusted_bot)
+      replace_player(org.jjk3.player, trusted_bot)
       begin
         timeout(2) do
-          player.chat_msg(nil, "Error Occured: Now you've been kicked out")
+          org.jjk3.player.chat_msg(nil, "Error Occured: Now you've been kicked out")
         }       rescue -> err
         puts $!
       }     }
@@ -462,9 +462,9 @@ open class Admin(
 
 
     fun replace_player(old_player, _player)={
-      log.warn("Replacing player old://{old_player} ://{_player}")
-      log.debug("Current Turn Player: //{currentTurn().player}.  Old Player: //{old_player}")
-      //at this point, the  player should already have all of the old's cards
+      log.warn("Replacing org.jjk3.player old://{old_player} ://{_player}")
+      log.debug("Current Turn Player: //{currentTurn().org.jjk3.player}.  Old Player: //{old_player}")
+      //at this point, the  org.jjk3.player should already have all of the old's cards
 
       other_players(old_player) do |p|
         p.player_replaced_by(old_player.info, _player.info)
@@ -473,9 +473,9 @@ open class Admin(
       observers[observers.index(old_player)] = _player if observers.include?(old_player)
       currentTurn().rule_error = nil
 
-      //if it was the old player's turn
-      if (currentTurn().player == old_player)
-        currentTurn().player = _player
+      //if it was the old org.jjk3.player's turn
+      if (currentTurn().org.jjk3.player == old_player)
+        currentTurn().org.jjk3.player = _player
         log.warn("**Giving Turn to REPLACEMENT PLAYER: //{_player}")
         give_turn(currentTurn, _player, false)
       }     }
@@ -516,7 +516,7 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
     }
 
     override fun handle_roll_7(roll: Pair<Int, Int>) {
-        //Each player must first get rid of half their cards if they more than 7
+        //Each org.jjk3.player must first get rid of half their cards if they more than 7
         admin.players.forEach { p ->
             try {
                 if (p.count_resources() > 7) {

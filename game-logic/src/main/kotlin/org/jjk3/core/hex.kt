@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 enum class Direction {
     Up, Down, RightUp, RightDown, LeftUp, LeftDown

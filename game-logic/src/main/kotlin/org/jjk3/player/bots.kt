@@ -1,6 +1,6 @@
-package player
+package org.jjk3.player
 
-import core.*
+import org.jjk3.core.*
 
 //only abstract since i haven't finished this yet
 abstract class Bot(first_name: String,
@@ -36,10 +36,10 @@ class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
 
         /**
          * Wait for the settlement to actually be placed.
-         * Really, this is a bit of a hack, since the board SHOULD be updated before the method is done.
+         * Really, this is a bit of a hack, since the org.jjk3.board SHOULD be updated before the method is done.
          */
         //timeout(10) do
-        //while board.getHex(sx,sy).nodes[sn].city == null
+        //while org.jjk3.board.getHex(sx,sy).nodes[sn].city == null
         //  sleep(0.1)
         // }
         /// }
@@ -60,7 +60,7 @@ class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
  */
 class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
     /**
-     * #Tell this player to move the bandit
+     * #Tell this org.jjk3.player to move the bandit
      * [old_hex] the hex where the bandit currently sits
      * return a  hex
      */
@@ -84,14 +84,14 @@ class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
         return player.board!!.tiles.values.find { !it.has_bandit }!!
     }
 
-    /** Ask the player to choose a player among the given list */
+    /** Ask the org.jjk3.player to choose a org.jjk3.player among the given list */
     override fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference {
         return players.find { it.color != player.color } ?:
                 throw  IllegalStateException("I'm being forced to select myself")
     }
 }
 
-/** An AI player that just chooses moves at random */
+/** An AI org.jjk3.player that just chooses moves at random */
 class RandomPlayer(first_name: String,
                    last_name: String,
                    admin: Admin,
@@ -190,8 +190,8 @@ class RandomPlayer(first_name: String,
     }
 
     /**
-     * Ask the player to select some cards from a list.
-     * This is used when a player must discard or resource
+     * Ask the org.jjk3.player to select some cards from a list.
+     * This is used when a org.jjk3.player must discard or resource
      * monopoly or year of plenty
      */
     override fun select_resource_cards(cards: List<Resource>, count: Int, reason: Int): List<Resource> {
@@ -305,8 +305,8 @@ class SinglePurchasePlayer(first_name: String,
         return result
     }
 
-    // Ask the player to select some cards from a list.
-    // This is used when a player must discard or resource monopoly or year of plenty
+    // Ask the org.jjk3.player to select some cards from a list.
+    // This is used when a org.jjk3.player must discard or resource monopoly or year of plenty
     override fun select_resource_cards(cards: List<Resource>, count: Int, reason: Int): List<Resource> {
         var selection: List<Resource> = emptyList()
         var cards_to_select_from = cards
@@ -357,7 +357,7 @@ class SinglePurchasePlayer(first_name: String,
         return null
     }
 
-    // Calculate the cards that this player needs to get to purchase
+    // Calculate the cards that this org.jjk3.player needs to get to purchase
     // the desired_piece
     // Class -> Array of Cards
     fun calculate_cards_needed(piece: Purchaseable): List<Resource> {
@@ -365,7 +365,7 @@ class SinglePurchasePlayer(first_name: String,
     }
 
     // Place your desired piece
-    // This method assumes that the player can afford the piece
+    // This method assumes that the org.jjk3.player can afford the piece
     fun place_desired_piece() {
         when (desired_piece) {
             is Road -> {

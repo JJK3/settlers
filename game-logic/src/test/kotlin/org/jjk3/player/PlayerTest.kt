@@ -1,8 +1,8 @@
-package player
+package org.jjk3.player
 
-import core.Hex
-import core.Resource
-import core.ResourceCard
+import org.jjk3.core.Hex
+import org.jjk3.core.Resource
+import org.jjk3.core.ResourceCard
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

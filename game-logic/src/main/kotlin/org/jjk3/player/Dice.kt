@@ -1,7 +1,7 @@
-package player
+package org.jjk3.player
 
-import core.Hex
-import core.Node
+import org.jjk3.core.Hex
+import org.jjk3.core.Node
 import java.util.*
 
 object Dice {

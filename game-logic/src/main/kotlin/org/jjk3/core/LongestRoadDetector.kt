@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 class LongestRoadDetector(val board: Board) {
 
@@ -6,7 +6,7 @@ class LongestRoadDetector(val board: Board) {
         fun plus(edge: Edge) = LongestRoadResult(longestRoad + edge, examinedEdges + edge)
     }
 
-    /** Does the given player have longest road. */
+    /** Does the given org.jjk3.player have longest road. */
     fun hasLongestRoad(color: String): Boolean {
         val allLongestRoads = getLongestRoads()
         val maxes = getMaxes(allLongestRoads) { it.longestRoad.size }
@@ -46,7 +46,7 @@ class LongestRoadDetector(val board: Board) {
         return edgesToTraverseNext
     }
 
-    /** get all LongestRoadResults for the entire board. */
+    /** get all LongestRoadResults for the entire org.jjk3.board. */
     private fun getLongestRoads(): List<LongestRoadResult> {
         var edgesToExamine = board.allEdges().filter(Edge::hasRoad)
         var longestRoads = emptyList<LongestRoadResult>()

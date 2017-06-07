@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 import org.junit.Assert.*
 import org.junit.Test
@@ -70,7 +70,7 @@ class EdgeTest2 {
         }
     }
 
-    // Create a board and visit roads that touch but have differing colors.
+    // Create a org.jjk3.board and visit roads that touch but have differing colors.
     @Test fun testVisit1() {
         var board = StandardBoard()
         var e1 = board.placeRoad(Road("red"), EdgeCoordinate(0, 2, 2))
@@ -88,7 +88,7 @@ class EdgeTest2 {
         assertEquals(e4.getCompleteRoad().size, 2)
     }
 
-    // Create a board and visit the roads of a circle
+    // Create a org.jjk3.board and visit the roads of a circle
     @Test fun testVisitRoad() {
         var board = StandardBoard()
         var e5 = board.placeRoad(Road("orange"), EdgeCoordinate(0, 0, 0))
@@ -146,11 +146,11 @@ class NodeTest2 {
          assertEquals(1.0 / 36.0, Hex.dice_probs[12]!!, 0.0)
          assertEquals(2.0 / 36.0, Hex.dice_probs[3]!!, 0.0)
 
-         var board = StandardBoard()
-         board.getHex(1, 1)!!.randomNumber = 3
-         board.getHex(0, 2)!!.randomNumber = 2
-         board.getHex(0, 1)!!.randomNumber = 12
-         val n = board.getNode(1, 1, 5)!!.get_hex_prob()
+         var org.jjk3.board = StandardBoard()
+         org.jjk3.board.getHex(1, 1)!!.randomNumber = 3
+         org.jjk3.board.getHex(0, 2)!!.randomNumber = 2
+         org.jjk3.board.getHex(0, 1)!!.randomNumber = 12
+         val n = org.jjk3.board.getNode(1, 1, 5)!!.get_hex_prob()
          assertEquals((4.0 / 36.0), n, 0.0)
      }*/
 }
@@ -163,11 +163,11 @@ class HexTest2 {
 
 /*
     @Test fun testGetClockwiseConnectingEdge() {
-        var board = MiniBoard()
-        assertEquals(board.getHex(0, 0)!!.getClockwiseConnectingEdge().coords, board.getEdge(0, 0, 3)!!.coords)
-        assertEquals(board.getHex(0, 1)!!.getClockwiseConnectingEdge().coords, board.getEdge(0, 1, 4)!!.coords)
-        assertEquals(board.getHex(-1, 1)!!.getClockwiseConnectingEdge().coords, board.getEdge(-1, 1, 0)!!.coords)
-        assertEquals(board.getHex(-1, 0)!!.getClockwiseConnectingEdge().coords, board.getEdge(-1, 0, 1)!!.coords)
+        var org.jjk3.board = MiniBoard()
+        assertEquals(org.jjk3.board.getHex(0, 0)!!.getClockwiseConnectingEdge().coords, org.jjk3.board.getEdge(0, 0, 3)!!.coords)
+        assertEquals(org.jjk3.board.getHex(0, 1)!!.getClockwiseConnectingEdge().coords, org.jjk3.board.getEdge(0, 1, 4)!!.coords)
+        assertEquals(org.jjk3.board.getHex(-1, 1)!!.getClockwiseConnectingEdge().coords, org.jjk3.board.getEdge(-1, 1, 0)!!.coords)
+        assertEquals(org.jjk3.board.getHex(-1, 0)!!.getClockwiseConnectingEdge().coords, org.jjk3.board.getEdge(-1, 0, 1)!!.coords)
     }
 */
 
@@ -241,9 +241,9 @@ class BoardTest {
     /* Hexes and edges should share the same nodes. */
     @Test fun testSameNodes() {
         var board = StandardBoard()
-        assertSame(board.getEdge(EdgeCoordinate(0, 1, 0)), board.getEdge(core.EdgeCoordinate(0, 0, 3)))
-        assertSame(board.getEdge(EdgeCoordinate(0, 1, 1)), board.getEdge(core.EdgeCoordinate(1, 0, 4)))
-        assertSame(board.getEdge(EdgeCoordinate(1, 1, 2)), board.getEdge(core.EdgeCoordinate(2, 2, 5)))
+        assertSame(board.getEdge(EdgeCoordinate(0, 1, 0)), board.getEdge(org.jjk3.core.EdgeCoordinate(0, 0, 3)))
+        assertSame(board.getEdge(EdgeCoordinate(0, 1, 1)), board.getEdge(org.jjk3.core.EdgeCoordinate(1, 0, 4)))
+        assertSame(board.getEdge(EdgeCoordinate(1, 1, 2)), board.getEdge(org.jjk3.core.EdgeCoordinate(2, 2, 5)))
     }
 
     @Test fun testMiniboardShouldBuildCorrectly() {
@@ -251,13 +251,13 @@ class BoardTest {
         assertEquals(board.allEdges().size, 19)
         assertEquals(board.allNodes().size, 16)
         assertEquals(board.getHex(HexCoordinate(0, 0)).edges[3].coords(),
-                board.getHex(core.HexCoordinate(0, 1)).edges[0].coords())
+                board.getHex(org.jjk3.core.HexCoordinate(0, 1)).edges[0].coords())
         assertEquals(board.getHex(HexCoordinate(0, 0)).edges[4].coords(),
-                board.getHex(core.HexCoordinate(-1, 0)).edges[1].coords())
+                board.getHex(org.jjk3.core.HexCoordinate(-1, 0)).edges[1].coords())
         check_opposing_edges(board)
     }
 
-    // Create a board and place some roads on it.
+    // Create a org.jjk3.board and place some roads on it.
     @Test fun testLongestRoadShouldBeDetected() {
         var board = StandardBoard()
         board.placeRoad(Road("red"), EdgeCoordinate(0, 2, 2))
@@ -388,7 +388,7 @@ class BoardTest {
         assertEquals(i, 2)
     }
 
-    //Test the randomNumber of nodes that are created in a standard board.
+    //Test the randomNumber of nodes that are created in a standard org.jjk3.board.
     @Test fun testInsertNodes() {
         var board = StandardBoard()
         // count the nodes by edges
@@ -439,7 +439,7 @@ class BoardTest {
         assertEquals(bandit_hex.size, 1)
     }
 
-    //Test that a board cannor be created , a port inland
+    //Test that a org.jjk3.board cannor be created , a port inland
     @Test fun testBADInlandPort() {
         //        evaluating {
         // InlandPortBoard
@@ -469,7 +469,7 @@ object HugeBoard {
     }
 }
 
-/** A invalid board used in the test_create_board_,_inland_port */
+/** A invalid org.jjk3.board used in the test_create_board_,_inland_port */
 class InlandPortBoard : StandardBoard() {
     /*   override fun subclass_init() {
            super.subclass_init()

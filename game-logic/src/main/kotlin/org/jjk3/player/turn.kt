@@ -1,9 +1,8 @@
-package player
+package org.jjk3.player
 
-import core.*
+import org.jjk3.core.*
 import org.apache.log4j.Logger
-import server.TrustedPlayer
-import java.util.concurrent.ConcurrentMap
+import org.jjk3.player.TurnState.RolledDice
 
 enum class TurnState(val desc: String, val is_terminal_state: Boolean) {
 
@@ -29,7 +28,7 @@ open class HasTurnState {
     fun isDone() = state.is_terminal_state
     fun has_rolled(): Boolean {
         // "CURRENT STATE: #{self.state} : #{TurnState::ROLLED_DICE} : #{self.state == TurnState::ROLLED_DICE}"
-        return state == TurnState.RolledDice
+        return state == RolledDice
     }
 
     fun set_state(s: TurnState) {
@@ -42,7 +41,7 @@ open class HasTurnState {
     }
 }
 
-open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTurnState() {
+open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTurnState() {
     companion object {
         val DELETE_REASON_SETTLEMENT = 1
         val DELETE_REASON_CITY = 2
@@ -59,9 +58,9 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     open val is_setup = false
     var rule_error: Exception? = null
     open fun roll_dice(): Pair<Int, Int> {
-        assert_not_done()
+        assertNotDone()
         val result = admin.rollDice()
-        set_state(TurnState.RolledDice)
+        set_state(RolledDice)
         return result
     }
 
@@ -69,16 +68,12 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     fun active_cards() = player.get_played_dev_cards().filter { !it.isDone }
 
     open fun buy_development_card(): DevelopmentCard {
-        check_state("Development card bought")
+        assertState(RolledDice)
         val (newDevCards, card) = admin.board.developmentCards.removeRandom()
         admin.board.developmentCards = newDevCards
         pay_for(card)
         player.add_cards(listOf(card))
         return card
-    }
-
-    fun set_player(p: TrustedPlayer) {
-        this.player = p
     }
 
     /** The user has broken a rule.  They going to be kicked out */
@@ -93,11 +88,11 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
      *  Gets a list of quotes from the bank and other users
      * Optionally takes a block that iterates through each quote as they come
      * (List(CardType), List(CardType)) -> List(Quote)
-     * This is from the current player's point of view.  He wants the want list and will give the giveList
+     * This is from the current org.jjk3.player's point of view.  He wants the want list and will give the giveList
      */
     fun get_quotes(wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
         validate_quote_lists(wantList, giveList)
-        check_state("get_quotes")
+        assertState(RolledDice)
         val quotes = admin.get_quotes(player, wantList, giveList)
         all_quotes = (all_quotes + quotes).distinct()
         return quotes
@@ -109,7 +104,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
      */
     fun get_quotes_from_bank(wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
         validate_quote_lists(wantList, giveList)
-        check_state("get_quotes_from_bank")
+        assertState(RolledDice)
         val quotes = admin.get_quotes_from_bank(player, wantList, giveList)
         all_quotes = (all_quotes + quotes).distinct()
         return quotes
@@ -128,7 +123,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
             it.player_moved_bandit(player.info(), _tile)
         }
 
-        //Take a card from a player
+        //Take a card from a org.jjk3.player
         //the colors of the cities touching the  tile
         val touching_colors = _tile.nodes_with_cities().map { it.city!!.color }.distinct()
         val touching_players = touching_colors.map {
@@ -156,13 +151,13 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         if (admin.is_game_done()) {
             break_rule("Game is Over")
         }
-        check_state("Road placed")
+        assertState(RolledDice)
         val edge = board.getEdge(edgeCoordinate)
         if (!board.getValidRoadSpots(player.color).contains(edge)) {
             break_rule("Invalid Road Placement $edgeCoordinate")
         }
 
-        //if a player uses a roadBuilding card, then his purchasedRoads > 0
+        //if a org.jjk3.player uses a roadBuilding card, then his purchasedRoads > 0
         //they shouldn't pay for the road in this case.
         val road: Road
         if (player.free_roads() > 0) {
@@ -176,7 +171,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         admin.checkForWinner()
     }
 
-    /** A helper method to get a player based on a color */
+    /** A helper method to get a org.jjk3.player based on a color */
     fun get_player(color: String) = admin.getPlayer(color)
 
     fun can_afford(pieces: List<Purchaseable>) = get_player(player.color)!!.can_afford(pieces)
@@ -185,9 +180,9 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         if (admin.is_game_done()) {
             break_rule("Game is Over")
         }
-        check_state("Settlement placed")
+        assertState(RolledDice)
         val node = board.getNode(coord)
-        assert_rule(node.hasCity(), "Cannot place a settlement on a " + node.city)
+        assertRule(node.hasCity(), "Cannot place a settlement on a " + node.city)
         val sett = purchaseSettlement()
         if (!board.getValidSettlementSpots(road_constraint, player.color).contains(node)) {
             break_rule("Invalid Settlement Placement $coord")
@@ -206,12 +201,12 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         if (admin.is_game_done()) {
             break_rule("Game is Over")
         }
-        check_state("City placed")
+        assertState(RolledDice)
         val node = board.getNode(coord)
-        assert_rule(!node.hasCity(), "Invalid City Placement.  There is no settlement at $coord")
-        assert_rule(node.city?.color != player.color, "Invalid City Placement. " +
+        assertRule(!node.hasCity(), "Invalid City Placement.  There is no settlement at $coord")
+        assertRule(node.city?.color != player.color, "Invalid City Placement. " +
                 "Settlement has wrong color at $coord. expected: ${player.color} was:${node.city?.color}")
-        assert_rule(node.city !is Settlement, "A city must be placed on top of a Settlement, not a ${node.city}")
+        assertRule(node.city !is Settlement, "A city must be placed on top of a Settlement, not a ${node.city}")
         val city = purchaseCity()
         board.getPiecesForSale(player.color).putBack(node.city as Settlement)
         board.placeCity(city, coord)
@@ -221,13 +216,13 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         return node
     }
 
-    fun assert_not_done() = assert_rule(isDone(), "Turn is already done: $state")
-    open fun check_state(s: String) {
-        assert_rule(!has_rolled(), "$s before dice were rolled.  Current state: $state")
-        assert_rule(active_cards().isNotEmpty(), "All card actions must be finished.")
-        assert_not_done()
+    fun assertState(state: TurnState) {
+        if (this.state != state) {
+            break_rule("Expected turn state to be $state, but was ${this.state}")
+        }
     }
 
+    fun assertNotDone() = assertRule(isDone(), "Turn is already done: $state")
     private fun purchaseCity(): City = board.getPiecesForSale(player.color).takeCity().also { pay_for(it) }
     private fun purchaseSettlement(): Settlement = board.getPiecesForSale(player.color).takeSettlement().also {
         pay_for(it)
@@ -235,9 +230,9 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
 
     private fun purchaseRoad(): Road = board.getPiecesForSale(player.color).takeRoad().also { pay_for(it) }
     /**
-     * Makes a player pay for a piece
-     * Throws an exception if the player doesn't have enough cards,
-     * but doesn't mutate the player if an exception is thrown.
+     * Makes a org.jjk3.player pay for a piece
+     * Throws an exception if the org.jjk3.player doesn't have enough cards,
+     * but doesn't mutate the org.jjk3.player if an exception is thrown.
      */
     open fun pay_for(piece: Purchaseable): Unit {
         val reason = when (piece) {
@@ -251,11 +246,11 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
 
     open fun done() {
         if (!admin.is_game_done()) {
-            assert_rule(!has_rolled() || state.is_terminal_state,
+            assertRule(!has_rolled() || state.is_terminal_state,
                     "Turn ended before dice were rolled.  Current state: $state")
-            assert_rule(active_cards().isNotEmpty(), "All card actions must be finished.")
-            assert_rule(player.purchasedRoads != 0, "You cannot end a turn while there are purchased pieces to place")
-            assert_rule(active_cards().any { it.single_turn_card }, "There are still active cards: ${active_cards()}")
+            assertRule(active_cards().isNotEmpty(), "All card actions must be finished.")
+            assertRule(player.purchasedRoads != 0, "You cannot end a turn while there are purchased pieces to place")
+            assertRule(active_cards().any { it.single_turn_card }, "There are still active cards: ${active_cards()}")
         }
         force_done()
         log.debug("Turn done")
@@ -266,7 +261,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     }
 
     fun validate_quote_lists(wantList: List<Resource>, giveList: List<Resource>) {
-        // Make sure that the player has enough cards to make the offer
+        // Make sure that the org.jjk3.player has enough cards to make the offer
         for (giveType in giveList.distinct()) {
             if (player.countResources(giveType) == 0) {
                 break_rule("You can't offer cards that you don't have: " +
@@ -276,8 +271,8 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     }
 
     /**
-     * Take a random card from another player and plus it to your own cards
-     * If player has no cards, do nothing
+     * Take a random card from another org.jjk3.player and plus it to your own cards
+     * If org.jjk3.player has no cards, do nothing
      */
     fun take_random_card(victim: PlayerReference): Unit {
         val real_victim = get_player(victim.color)!!
@@ -291,18 +286,18 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         player.add_cards(listOf(res))
     }
 
-    fun assert_rule(condition: Boolean, errorMsg: String) {
+    fun assertRule(condition: Boolean, errorMsg: String) {
         if (condition) {
             break_rule(errorMsg)
         }
     }
 
     fun play_development_card(card: DevelopmentCard) {
-        assert_rule(admin.is_game_done(), "Game is Over")
-        assert_rule(!player.get_cards().contains(card),
+        assertRule(admin.is_game_done(), "Game is Over")
+        assertRule(!player.get_cards().contains(card),
                 "Player does not own the card being played. cards:" + player.get_cards())
-        assert_rule(isDone(), "Turn is done")
-        assert_rule(card !is SoldierCard && !this.has_rolled(),
+        assertRule(isDone(), "Turn is done")
+        assertRule(card !is SoldierCard && !this.has_rolled(),
                 "$card played before dice were rolled. Current State: $state")
         card.use(this)
         player.del_cards(listOf(card), Turn.DELETE_REASON_OTHER)
@@ -315,7 +310,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
      * Quote -> void
      */
     fun accept_quote(quote: Quote) {
-        check_state("accept quote")
+        assertState(RolledDice)
         if (!all_quotes.contains(quote)) {
             break_rule("Attempting to accept a quote that hasn't been received:$quote Other quotes: $all_quotes")
         }
@@ -365,9 +360,9 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         val e = board.getEdge(edgeCoordinate)
         val validSpots = get_valid_road_spots()
 
-        assert_rule(placed_road != null, "Too many roads placed in setup")
-        assert_rule(placed_settlement == null, "Must place settlement before road")
-        assert_rule(!validSpots.contains(e), "Road must touch the settlement just placed")
+        assertRule(placed_road != null, "Too many roads placed in setup")
+        assertRule(placed_settlement == null, "Must place settlement before road")
+        assertRule(!validSpots.contains(e), "Road must touch the settlement just placed")
 
         this.placed_road = e
         super.place_road(edgeCoordinate)
@@ -393,8 +388,8 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
     }
 
     override fun done() {
-        assert_rule(placed_settlement == null, "You cannot end a setup turn without placing a settlement.")
-        assert_rule(placed_road == null, "You cannot end a setup turn without placing a road.")
+        assertRule(placed_settlement == null, "You cannot end a setup turn without placing a settlement.")
+        assertRule(placed_road == null, "You cannot end a setup turn without placing a road.")
         force_done()
         log.debug("Turn done")
     }
@@ -411,59 +406,6 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         throw RuleException("Cannot buy development card during setup")
     }
 
-    override fun check_state(s: String) {}
     override fun pay_for(piece: Purchaseable): Unit {}
 }
 
-/**
- * Represents a quote for trading cards
- * This is basically the Bidder saying "I'll give you giveType for receiveType"
- * The Trader then accepts the quote afterwards
- */
-class Quote(
-        val bidder: PlayerReference?,
-        val receiveType: Resource,
-        val receiveNum: Int,
-        val giveType: Resource,
-        val giveNum: Int) {
-
-    override fun toString() = "[Quote $receiveNum $receiveType for $giveNum $giveType from $bidder]"
-    fun validate(admin: Admin): Unit {
-        if (bidder != null) {
-            val player = admin.getPlayer(bidder.color)!!
-            if (player.countResources(giveType) < giveNum) {
-                throw  IllegalStateException("Bidder $bidder does not have enough resources for this quote:${this} " +
-                        "Bidder cards:${player.get_cards()}")
-            }
-        }
-    }
-
-    /** Is another quote a better deal? (And also the same resources) */
-    fun isBetterQuote(other: Quote): Boolean = other.receiveNum < this.receiveNum &&
-            other.giveType == this.giveType && other.receiveType == this.receiveType
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other?.javaClass != javaClass) return false
-
-        other as Quote
-
-        if (bidder != other.bidder) return false
-        if (receiveType != other.receiveType) return false
-        if (receiveNum != other.receiveNum) return false
-        if (giveType != other.giveType) return false
-        if (giveNum != other.giveNum) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = bidder?.hashCode() ?: 0
-        result = 31 * result + receiveType.hashCode()
-        result = 31 * result + receiveNum
-        result = 31 * result + giveType.hashCode()
-        result = 31 * result + giveNum
-        return result
-    }
-
-}

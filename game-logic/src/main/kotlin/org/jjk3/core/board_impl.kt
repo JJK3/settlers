@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 import java.util.*
 
@@ -123,7 +123,7 @@ object NSizeNumberBag {
     }
 }
 
-// a "Square" board where x and y dimenstions are the same.
+// a "Square" org.jjk3.board where x and y dimenstions are the same.
 class SquareBoard(side: Int) : StandardBoard() {
     init {
         var bag: Bag<Hex> = TileBag.newBag(side * side)

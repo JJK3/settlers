@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 import java.util.*
 
@@ -82,7 +82,7 @@ class Edge {
         return otherNode.edges().filter { it != this }.toSet()
     }
 
-    /** Is this edge touching the outside of the board? */
+    /** Is this edge touching the outside of the org.jjk3.board? */
     fun isOutsideEdge() = hexes.size < 2
 
     fun hasRoad(): Boolean = this.road != null

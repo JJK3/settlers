@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 import java.util.*
 import java.util.concurrent.TimeoutException

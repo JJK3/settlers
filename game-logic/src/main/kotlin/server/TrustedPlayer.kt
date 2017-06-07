@@ -1,7 +1,7 @@
 package server
 
-import core.*
-import player.*
+import org.jjk3.core.*
+import org.jjk3.player.*
 
 
 class TrustedPlayer(
@@ -108,6 +108,6 @@ class TrustedPlayer(
     /*   override fun register_listener(listener: PlayerListener) {
     }*/
 
-    //TODO: need to go through ALL player methods
+    //TODO: need to go through ALL org.jjk3.player methods
 
 }

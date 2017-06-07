@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 /**
  * Iterates over hexes in a clockwise spiral

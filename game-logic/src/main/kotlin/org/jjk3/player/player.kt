@@ -1,6 +1,6 @@
-package player
+package org.jjk3.player
 
-import core.*
+import org.jjk3.core.*
 import org.apache.log4j.Logger
 import java.io.Serializable
 
@@ -40,7 +40,7 @@ abstract class Player(
 
     fun free_roads(): Int = purchasedRoads
     fun get_played_dev_cards(): List<DevelopmentCard> = played_dev_cards
-    /** Notifys the player that they have offically played a development card */
+    /** Notifys the org.jjk3.player that they have offically played a development card */
     open fun played_dev_card(card: DevelopmentCard): Unit {
         played_dev_cards += card
     }
@@ -74,14 +74,14 @@ abstract class Player(
 
     fun countResources(resource: Resource): Int = cards.count { it is ResourceCard && it.resource == resource }
 
-    /** Inform this player that another player has offered a quote.  i'm not sure we need this.*/
+    /** Inform this org.jjk3.player that another org.jjk3.player has offered a quote.  i'm not sure we need this.*/
     open fun offer_quote(quote: Quote) {
 
     }
 
     fun get_extra_victory_points(): Int = played_dev_cards.filterIsInstance(VictoryPointCard::class.java).count()
     /**
-     * Can this player afford the given pieces?
+     * Can this org.jjk3.player afford the given pieces?
      * [pieces] an Array of buyable piece classes (Cities, Settlements, etc.)
      */
     fun can_afford(pieces: List<Purchaseable>): Boolean {
@@ -95,7 +95,7 @@ abstract class Player(
     }
 
     /**
-     * Tell this player that they received more cards.
+     * Tell this org.jjk3.player that they received more cards.
      * [cards] an Array of card types
      */
     open fun add_cards(cards_to_add: List<Card>) {
@@ -146,7 +146,7 @@ abstract class Player(
                                  giveList: List<Resource>): List<Quote>
 
     /**
-     * Tell this player to move the bandit
+     * Tell this org.jjk3.player to move the bandit
      * [old_hex] the hex where the bandit currently sits
      * return a  hex
      * This method should be overridden
@@ -154,15 +154,15 @@ abstract class Player(
     abstract fun move_bandit(old_hex: Hex): Hex
 
     /**
-     * Ask the player to select some cards from a list.
-     * This is used when a player must discard or resource
+     * Ask the org.jjk3.player to select some cards from a list.
+     * This is used when a org.jjk3.player must discard or resource
      * monopoly or year of plenty
      * This method should be overridden
      */
     abstract fun select_resource_cards(cards: List<Resource>, count: Int, reason: Int): List<Resource>
 
     /**
-     * Ask the player to choose a player among the given list
+     * Ask the org.jjk3.player to choose a org.jjk3.player among the given list
      * This method should be overridden
      */
     abstract fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference
@@ -174,14 +174,14 @@ abstract class Player(
     /** Notify the observer that the game has begun */
     override fun game_start() {
         if (board == null) {
-            throw  IllegalStateException("Game is starting before a board has been set")
+            throw  IllegalStateException("Game is starting before a org.jjk3.board has been set")
         }
         game_finished = false
     }
 
     /**
      * Inform the observer that the game has finished.
-     * [player] the player who won
+     * [player] the org.jjk3.player who won
      * [points] the randomNumber of points they won ,.
      */
     override fun game_end(winner: PlayerReference, points: Int) {
@@ -195,8 +195,8 @@ abstract class Player(
     }
 
     /**
-     * Update this observer's version of the board
-     * [board] the  version of the board
+     * Update this observer's version of the org.jjk3.board
+     * [board] the  version of the org.jjk3.board
      */
     open fun update_board(b: Board) {
         this.board = b
@@ -204,7 +204,7 @@ abstract class Player(
 
     /**
      * Notify this observer that a road was placed
-     * [player] The player that placed the road
+     * [player] The org.jjk3.player that placed the road
      * [x, y, edge] The edge coordinates
      */
     override fun placed_road(player: PlayerReference, edgeCoordinate: EdgeCoordinate) {
@@ -213,7 +213,7 @@ abstract class Player(
 
     /**
      * Notify this observer that a settlement was placed
-     * [player] The player that placed the settlement
+     * [player] The org.jjk3.player that placed the settlement
      * [x, y, node] The node coordinates
      */
     override fun placed_settlement(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
@@ -222,14 +222,14 @@ abstract class Player(
 
     /**
      * Notify this observer that a city was placed
-     * [player] The player that placed the city
+     * [player] The org.jjk3.player that placed the city
      * [x, y, node] The node coordinates
      */
     override fun placed_city(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
         board?.placeCity(City(player.color), nodeCoordinate)
     }
 
-    /** How many resource cards does this player have? */
+    /** How many resource cards does this org.jjk3.player have? */
     fun count_resources() = resource_cards().size
 
     /**
@@ -261,7 +261,7 @@ abstract class Player(
 }
 
 /**
- * This encapsulates all the readable info about a player
+ * This encapsulates all the readable info about a org.jjk3.player
  * This object is essentially a struct that lets other players refer to each other
  * This way, other players will only know so much information about each other
  */

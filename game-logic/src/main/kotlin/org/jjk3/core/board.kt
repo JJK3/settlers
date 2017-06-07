@@ -1,4 +1,4 @@
-package core
+package org.jjk3.core
 
 import org.apache.log4j.Logger
 import java.util.concurrent.ConcurrentHashMap
@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 class RuleException(msg: String) : Exception(msg)
 
 /**
- * The central data structure for the Settlers game. The board contains all info
+ * The central data structure for the Settlers game. The org.jjk3.board contains all info
  * regarding tiles, cities, settlements, bandits, etc.
  */
 open class Board(val should_enforce_bandit: Boolean = true) {
@@ -56,17 +56,17 @@ open class Board(val should_enforce_bandit: Boolean = true) {
         return result
     }
 
-    /** Does the given player have longest road. */
+    /** Does the given org.jjk3.player have longest road. */
     fun hasLongestRoad(color: String): Boolean = longestRoadAuthority.hasLongestRoad(color)
 
     fun getLongestRoad(edge: Edge): List<Edge> = longestRoadAuthority.getLongestRoad(edge)
-    /** Port nodes controlled by the given player. */
+    /** Port nodes controlled by the given org.jjk3.player. */
     fun portNodes(color: String) = allNodes().filter { n -> n.hasPort() && n.city?.color == color }.toList()
 
-    /** Ports controlled by the given player */
+    /** Ports controlled by the given org.jjk3.player */
     fun getPorts(color: String): List<Port> = portNodes(color).map(Node::port).filterNotNull().toList()
 
-    /** Gets a list of cards, that the given player should receive */
+    /** Gets a list of cards, that the given org.jjk3.player should receive */
     fun getCards(number: Int, color: String): List<Resource> {
         val valid_hexes = tiles.values.filter { t ->
             t.number == number && !t.has_bandit && t.resource != null
@@ -100,7 +100,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
             }
 
     /**
-     * Called ONLY by a Turn object, this method mutates the board by placing a
+     * Called ONLY by a Turn object, this method mutates the org.jjk3.board by placing a
      * City or Settlement on it.
      */
     fun placeCity(city: City, coord: NodeCoordinate): Node {
@@ -138,7 +138,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      * on pre-existing roads. For SetupTurns, this should be false.
      * (Players don't need to connect settlements to roads during setup. )
      * <roadColor> The color of the road to constrain against.  For a normal turn,
-     * you need to ask which spots are valid for your player's color.
+     * you need to ask which spots are valid for your org.jjk3.player's color.
      * returns a list of Node objects
      */
     fun getValidSettlementSpots(roadConstraint: Boolean, roadColor: String): List<Node> {
@@ -196,11 +196,11 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     /**
-     * Add a  hex to the board.  We assume that the board is already in a correct state where there are not duplicate edges or nodes.
+     * Add a  hex to the org.jjk3.board.  We assume that the org.jjk3.board is already in a correct state where there are not duplicate edges or nodes.
      */
     fun addHex(hex: Hex) {
         if (tiles.contains(hex.coords)) {
-            throw IllegalArgumentException("The given hex is already on the board: ${hex.coords}")
+            throw IllegalArgumentException("The given hex is already on the org.jjk3.board: ${hex.coords}")
         }
         tiles[hex.coords] = hex
         EdgeNumber.ALL.forEach { i ->
