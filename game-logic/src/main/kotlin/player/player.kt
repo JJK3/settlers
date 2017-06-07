@@ -8,50 +8,37 @@ interface PlayerListener {
     fun got_turn(turn: Any)
 }
 
-class Message(val message: String, val sender: PlayerReference?) : Serializable
 abstract class Player(
         val first_name: String,
         val last_name: String,
-        val admin: Admin,
-        cities: Int = 4,
-        settlements: Int = 5,
-        roads: Int = 15) : GameObserver {
+        val cities: Int = 4,
+        val settlements: Int = 5,
+        val roads: Int = 15) : GameObserver {
 
-    val log = Logger.getLogger(javaClass)
-    var pic: String = ""
-    var pic_square: String = ""
+    companion object {
+        val log = Logger.getLogger(this::class.java)
+    }
+
     var _color: String = ""
     var cards_mutex = Object()
     var pieces_mutex = Object()
     var board_mutex = Object()
 
-
-    var purchased_pieces = 0
-    var piecesLeft = emptyList<BoardPiece>()
-    var msgLog = emptyList<Message>()
+    var purchasedRoads = 0
     var preferred_color: String? = null
-    var listeners = emptyList<PlayerListener>() //These listeners are used by the UI
-    var extra_victory_points: Int = 0
     var played_dev_cards = emptyList<DevelopmentCard>()
     private var game_finished: Boolean = false
     protected var current_turn: Turn? = null
     protected var cards = emptyList<Card>()
-
-    init {
-        piecesLeft += (0..cities).map { City(color) }
-        piecesLeft += (0..settlements).map { Settlement(color) }
-        piecesLeft += (0..roads).map { Road(color) }
-    }
-
     open fun give_free_roads(num_roads: Int): Unit {
-        purchased_pieces += num_roads
+        purchasedRoads += num_roads
     }
 
     open fun remove_free_roads(num_roads: Int): Unit {
-        purchased_pieces -= num_roads
+        purchasedRoads -= num_roads
     }
 
-    fun free_roads(): Int = purchased_pieces
+    fun free_roads(): Int = purchasedRoads
     fun get_played_dev_cards(): List<DevelopmentCard> = played_dev_cards
     /** Notifys the player that they have offically played a development card */
     open fun played_dev_card(card: DevelopmentCard): Unit {
@@ -59,25 +46,21 @@ abstract class Player(
     }
 
     fun info() = PlayerReference(this)
-    open var color = _color
-
-    private var internalBoard: Board? = null
-    open var board: Board?
+    open var color: String
         get() {
-            return internalBoard
+            return _color
         }
         set(value) {
-            internalBoard = value?.copy()
+            _color = value
+        }
+
+    open var board: Board? = null
+        set(value) {
+            field = value?.copy()
         }
 
     fun count_dev_cards(): Int {
         return get_cards(DevelopmentCard::class.java)
-    }
-
-    /** Send a message to this player */
-    open fun chat_msg(player: PlayerReference?, msg: String): Unit {
-        this.msgLog += Message(msg, player)
-        log.debug("MESSAGE FOR:(*{full_name}:*{color})  *{msg}")
     }
 
     /** Get an immutable map of cards */
@@ -90,22 +73,19 @@ abstract class Player(
     }
 
     fun countResources(resource: Resource): Int = cards.count { it is ResourceCard && it.resource == resource }
-    fun countCitiesLeft() = piecesLeft.count { it is City }
-    fun countSettlementsLeft() = piecesLeft.count { it is Settlement }
-    fun countRoadsLeft() = piecesLeft.count { it is Road }
+
     /** Inform this player that another player has offered a quote.  i'm not sure we need this.*/
     open fun offer_quote(quote: Quote) {
 
     }
 
-    open fun add_extra_victory_points(points: Int) = extra_victory_points + points
-    fun get_extra_victory_points(): Int = extra_victory_points
+    fun get_extra_victory_points(): Int = played_dev_cards.filterIsInstance(VictoryPointCard::class.java).count()
     /**
      * Can this player afford the given pieces?
      * [pieces] an Array of buyable piece classes (Cities, Settlements, etc.)
      */
     fun can_afford(pieces: List<Purchaseable>): Boolean {
-        val totalCost = pieces.flatMap { admin.getPrice(it) }
+        val totalCost = pieces.flatMap { it.price }
         try {
             removeCards(cards, totalCost)
             return true
@@ -125,35 +105,6 @@ abstract class Player(
         }
     }
 
-    fun copy_pieces_left() {
-        synchronized(pieces_mutex) { ->
-            piecesLeft //Don't need to copy it since it's immutable
-        }
-    }
-
-    fun get_pieces_left(pieceKlass: Class<out BoardPiece>): Int {
-        return synchronized(pieces_mutex) { ->
-            piecesLeft.count { pieceKlass.isInstance(it) }
-        }
-    }
-
-    open fun addPiecesLeft(pieceKlass: Class<out BoardPiece>, amount: Int) {
-        return synchronized(pieces_mutex) { ->
-            piecesLeft += (0..amount).map {
-                pieceKlass.constructors.first().newInstance(color) as BoardPiece
-            }
-        }
-    }
-
-    fun removePiece(piece: BoardPiece) {
-        return synchronized(pieces_mutex) { ->
-            if (!piecesLeft.contains(piece)) {
-                throw RuleException("Player does not have $piece in $piecesLeft")
-            }
-            piecesLeft -= piece
-        }
-    }
-
     /**
      * Remove cards from this players hand
      * throws a RuleException if there aren't sufficent cards
@@ -169,7 +120,7 @@ abstract class Player(
      */
     open fun del_cards(cards_to_lose: List<Card>, reason: Int) {
         synchronized(cards_mutex) { ->
-            cards = removeCards(cards_to_lose, cards)
+            cards = removeCards(cards, cards_to_lose)
         }
     }
 
@@ -188,17 +139,6 @@ abstract class Player(
     /** This method should be extended */
     open fun take_turn(turn: Turn, is_setup: Boolean) {
         this.current_turn = turn
-        listeners.forEach { l ->
-            l.got_turn(turn)
-            //turn.register_listener(l)
-        }
-
-        /** This is only for server-side debugging */
-        //currentTurn.class != ProxyObject and
-        if (current_turn?.player?.color != this.color) {
-            throw IllegalStateException(
-                    "Turn's player ${current_turn?.player} does not match the actual player: ${this}")
-        }
     }
 
     /** This should be overidden in the implementations */
@@ -242,7 +182,7 @@ abstract class Player(
     /**
      * Inform the observer that the game has finished.
      * [player] the player who won
-     * [points] the number of points they won ,.
+     * [points] the randomNumber of points they won ,.
      */
     override fun game_end(winner: PlayerReference, points: Int) {
         game_finished = true
@@ -267,8 +207,8 @@ abstract class Player(
      * [player] The player that placed the road
      * [x, y, edge] The edge coordinates
      */
-    override fun placed_road(player_reference: PlayerReference, edgeCoordinate: EdgeCoordinate) {
-        board?.placeRoad(Road(player_reference.color), edgeCoordinate)
+    override fun placed_road(player: PlayerReference, edgeCoordinate: EdgeCoordinate) {
+        board?.placeRoad(Road(player.color), edgeCoordinate)
     }
 
     /**
@@ -276,8 +216,8 @@ abstract class Player(
      * [player] The player that placed the settlement
      * [x, y, node] The node coordinates
      */
-    override fun placed_settlement(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
-        board?.placeCity(Settlement(player_reference.color), nodeCoordinate)
+    override fun placed_settlement(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        board?.placeCity(Settlement(player.color), nodeCoordinate)
     }
 
     /**
@@ -285,8 +225,8 @@ abstract class Player(
      * [player] The player that placed the city
      * [x, y, node] The node coordinates
      */
-    override fun placed_city(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
-        board?.placeCity(City(player_reference.color), nodeCoordinate)
+    override fun placed_city(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        board?.placeCity(City(player.color), nodeCoordinate)
     }
 
     /** How many resource cards does this player have? */
@@ -297,10 +237,6 @@ abstract class Player(
      * returns a list of ResourceTypes
      */
     fun resource_cards(): List<ResourceCard> = cards.filterIsInstance(ResourceCard::class.java)
-
-    fun register_listener(listener: PlayerListener) {
-        this.listeners += listener
-    }
 
     fun full_name(): String = this.first_name + " " + this.last_name
     override fun equals(other: Any?): Boolean {
@@ -333,8 +269,6 @@ class PlayerReference(player: Player) : Serializable {
     val first_name: String = player.first_name
     val last_name: String = player.last_name
     val color = player.color
-    val pic = player.pic
-    val pic_square = player.pic_square
     fun full_name(): String = this.first_name + " " + this.last_name
     override fun toString(): String = "<PlayerReference name=\"${full_name()}\"  color=\"$color\" />"
     override fun equals(other: Any?): Boolean {

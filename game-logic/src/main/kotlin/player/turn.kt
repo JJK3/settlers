@@ -3,6 +3,7 @@ package player
 import core.*
 import org.apache.log4j.Logger
 import server.TrustedPlayer
+import java.util.concurrent.ConcurrentMap
 
 enum class TurnState(val desc: String, val is_terminal_state: Boolean) {
 
@@ -59,7 +60,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     var rule_error: Exception? = null
     open fun roll_dice(): Pair<Int, Int> {
         assert_not_done()
-        var result = admin.rollDice()
+        val result = admin.rollDice()
         set_state(TurnState.RolledDice)
         return result
     }
@@ -69,7 +70,8 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
 
     open fun buy_development_card(): DevelopmentCard {
         check_state("Development card bought")
-        val card = admin.board.developmentCards.grab()
+        val (newDevCards, card) = admin.board.developmentCards.removeRandom()
+        admin.board.developmentCards = newDevCards
         pay_for(card)
         player.add_cards(listOf(card))
         return card
@@ -151,25 +153,24 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
 
     open fun place_road(edgeCoordinate: EdgeCoordinate) {
         log.debug("$player is trying to buy a road")
-        if (admin.is_game_done()) break_rule("Game is Over")
+        if (admin.is_game_done()) {
+            break_rule("Game is Over")
+        }
         check_state("Road placed")
         val edge = board.getEdge(edgeCoordinate)
-        if (edge == null) {
-            break_rule("Invalid edge: $edgeCoordinate")
-        }
         if (!board.getValidRoadSpots(player.color).contains(edge)) {
             break_rule("Invalid Road Placement $edgeCoordinate")
         }
 
         //if a player uses a roadBuilding card, then his purchasedRoads > 0
         //they shouldn't pay for the road in this case.
-        var should_pay = true
+        val road: Road
         if (player.free_roads() > 0) {
-            should_pay = false
             player.remove_free_roads(1)
+            road = board.getPiecesForSale(player.color).takeRoad()
+        } else {
+            road = purchaseRoad()
         }
-        val road = Road(player.color)
-        purchase(road, should_pay)
         board.placeRoad(road, edgeCoordinate)
         admin.observers.forEach { it.placed_road(player.info(), edgeCoordinate) }
         admin.checkForWinner()
@@ -181,13 +182,13 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     fun can_afford(pieces: List<Purchaseable>) = get_player(player.color)!!.can_afford(pieces)
     open fun place_settlement(coord: NodeCoordinate): Node {
         log.debug("$player is trying to buy a settlement")
-        if (admin.is_game_done()) break_rule("Game is Over")
+        if (admin.is_game_done()) {
+            break_rule("Game is Over")
+        }
         check_state("Settlement placed")
-        val node = board.getNode(coord)!!
-        if (node.hasCity()) break_rule("Cannot place a settlement on a " + node.city)
-        val sett = Settlement(player.color)
-        purchase(sett)
-        val spots = board.getValidSettlementSpots(road_constraint, player.color)
+        val node = board.getNode(coord)
+        assert_rule(node.hasCity(), "Cannot place a settlement on a " + node.city)
+        val sett = purchaseSettlement()
         if (!board.getValidSettlementSpots(road_constraint, player.color).contains(node)) {
             break_rule("Invalid Settlement Placement $coord")
         }
@@ -206,57 +207,33 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
             break_rule("Game is Over")
         }
         check_state("City placed")
-        val node = board.getNode(coord)!!
-
-        if (node.hasCity()) {
-            if (node.city?.color == player.color) {
-                if (node.city !is Settlement) {
-                    break_rule("A city must be placed on top of a Settlement, not a ${node.city}")
-                }
-                val city = City(player.color)
-                purchase(city)
-                player.addPiecesLeft(Settlement::class.java, 1) //Put the settlement back in the 'bag'
-                board.placeCity(city, coord)
-                log.info("City Placed by $player on $coord")
-                admin.observers.forEach { it.placed_city(player.info(), coord) }
-                admin.checkForWinner()
-            } else {
-                break_rule("Invalid City Placement.  Settlement has wrong color at $coord. " +
-                        "$player expected:${player.color} was:${node.city?.color}")
-            }
-        } else {
-            break_rule("Invalid City Placement.  There is no settlement at $coord")
-        }
+        val node = board.getNode(coord)
+        assert_rule(!node.hasCity(), "Invalid City Placement.  There is no settlement at $coord")
+        assert_rule(node.city?.color != player.color, "Invalid City Placement. " +
+                "Settlement has wrong color at $coord. expected: ${player.color} was:${node.city?.color}")
+        assert_rule(node.city !is Settlement, "A city must be placed on top of a Settlement, not a ${node.city}")
+        val city = purchaseCity()
+        board.getPiecesForSale(player.color).putBack(node.city as Settlement)
+        board.placeCity(city, coord)
+        log.info("City Placed by $player on $coord")
+        admin.observers.forEach { it.placed_city(player.info(), coord) }
+        admin.checkForWinner()
         return node
     }
 
-    fun assert_not_done() = assert_rule(isDone(), "Turn is already done: ${state}")
+    fun assert_not_done() = assert_rule(isDone(), "Turn is already done: $state")
     open fun check_state(s: String) {
-        assert_rule(!has_rolled(), "$s before dice were rolled.  Current state: ${state}")
+        assert_rule(!has_rolled(), "$s before dice were rolled.  Current state: $state")
         assert_rule(active_cards().isNotEmpty(), "All card actions must be finished.")
         assert_not_done()
     }
 
-    /**
-     * Make this player pay for and account for 1 less piece.
-     * This method will raise an exception if they can't actually buy the piece
-     * [pieceKlass] the Class object of the piece
-     * [should_pay] should the player pay for the given piece?
-     *              This is safe because this method is private
-     */
-    fun purchase(piece: BoardPiece, should_pay: Boolean = true) {
-        //Check that the player has any pieces left
-        if (player.get_pieces_left(piece::class.java) == 0) {
-            break_rule("player: ${player.full_name()} has no ${piece}s left")
-        }
-        player.removePiece(piece)
-
-        //Now, try to pay for the piece
-        if (should_pay) {
-            pay_for(piece)
-        }
+    private fun purchaseCity(): City = board.getPiecesForSale(player.color).takeCity().also { pay_for(it) }
+    private fun purchaseSettlement(): Settlement = board.getPiecesForSale(player.color).takeSettlement().also {
+        pay_for(it)
     }
 
+    private fun purchaseRoad(): Road = board.getPiecesForSale(player.color).takeRoad().also { pay_for(it) }
     /**
      * Makes a player pay for a piece
      * Throws an exception if the player doesn't have enough cards,
@@ -264,34 +241,28 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
      */
     open fun pay_for(piece: Purchaseable): Unit {
         val reason = when (piece) {
-            is Settlement ->
-                Turn.DELETE_REASON_SETTLEMENT
-            is City ->
-                Turn.DELETE_REASON_CITY
-            is Road ->
-                Turn.DELETE_REASON_ROAD
-            else ->
-                Turn.DELETE_REASON_OTHER
+            is Settlement -> Turn.DELETE_REASON_SETTLEMENT
+            is City -> Turn.DELETE_REASON_CITY
+            is Road -> Turn.DELETE_REASON_ROAD
+            else -> Turn.DELETE_REASON_OTHER
         }
-        player.del_cards(admin.getPrice(piece).map { ResourceCard(it) }, reason)
+        player.del_cards(piece.price.map(::ResourceCard), reason)
     }
 
     open fun done() {
-        if (!admin.is_game_done()) { //If the game is already done, we don't care
+        if (!admin.is_game_done()) {
             assert_rule(!has_rolled() || state.is_terminal_state,
-                    ("Turn ended before dice were rolled.  Current state: " + state))
+                    "Turn ended before dice were rolled.  Current state: $state")
             assert_rule(active_cards().isNotEmpty(), "All card actions must be finished.")
-            assert_rule(player.purchased_pieces != 0, "You cannot end a turn while there are purchased pieces to place")
-            assert_rule(active_cards().any { it.single_turn_card }, "There are still active cards: " + active_cards())
+            assert_rule(player.purchasedRoads != 0, "You cannot end a turn while there are purchased pieces to place")
+            assert_rule(active_cards().any { it.single_turn_card }, "There are still active cards: ${active_cards()}")
         }
         force_done()
         log.debug("Turn done")
     }
 
     fun force_done() {
-        //done_stacktrace = caller
         set_state(TurnState.Done)
-        //    @admin_thread.run
     }
 
     fun validate_quote_lists(wantList: List<Resource>, giveList: List<Resource>) {
@@ -305,7 +276,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
     }
 
     /**
-     * Take a random card from another player and add it to your own cards
+     * Take a random card from another player and plus it to your own cards
      * If player has no cards, do nothing
      */
     fun take_random_card(victim: PlayerReference): Unit {
@@ -331,7 +302,7 @@ open class Turn(val admin: Admin, var player: Player, val board: Board) : HasTur
         assert_rule(!player.get_cards().contains(card),
                 "Player does not own the card being played. cards:" + player.get_cards())
         assert_rule(isDone(), "Turn is done")
-        assert_rule(!(card is SoldierCard) && !this.has_rolled(),
+        assert_rule(card !is SoldierCard && !this.has_rolled(),
                 "$card played before dice were rolled. Current State: $state")
         card.use(this)
         player.del_cards(listOf(card), Turn.DELETE_REASON_OTHER)
@@ -413,8 +384,8 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         if (settlement_count == 2) {
             // A Player gets cards for the 2nd settlement he places
             val touching_hexes = node.hexes.keys.filterNot { it.resource == null }
-            val resources = touching_hexes.map { it.get_card() }
-            player.add_cards(resources.map { ResourceCard(it) })
+            val resources = touching_hexes.map(Hex::get_card)
+            player.add_cards(resources.map(::ResourceCard))
         } else if (settlement_count != 1) {
             break_rule("Bad Game state.  Wrong # of settlements placed: " + settlement_count)
         }
@@ -422,8 +393,8 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
     }
 
     override fun done() {
-        assert_rule(placed_settlement == null, "You cannot end a setup turn ,out placing a settlement.")
-        assert_rule(placed_road == null, "You cannot end a setup turn ,out placing a road.")
+        assert_rule(placed_settlement == null, "You cannot end a setup turn without placing a settlement.")
+        assert_rule(placed_road == null, "You cannot end a setup turn without placing a road.")
         force_done()
         log.debug("Turn done")
     }

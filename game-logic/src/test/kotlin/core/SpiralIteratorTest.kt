@@ -1,14 +1,9 @@
 package core
 
-import core.TileBag
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-
-/**
- * Copyright (c) 2017 Ovitas Inc, All rights reserved.
- */
 class SpiralIteratorTest {
 
     val first = HexCoordinate(0, 0)
@@ -21,7 +16,7 @@ class SpiralIteratorTest {
     fun setup() {
         board = MiniBoard()
         spiral = SpiralIterator(board)
-        spiral.startingTile = board.getTile(first)!!
+        spiral.startingTile = board.getHex(first)!!
     }
 
     @Test
@@ -35,7 +30,7 @@ class SpiralIteratorTest {
 
     @Test
     fun getNextClockwiseEdge() {
-        val hex1 = board.getTile(first)!!
+        val hex1 = board.getHex(first)!!
         val top = hex1.edge(EdgeNumber(0))
         val expected = hex1.edge(EdgeNumber(3))
         assertEquals(spiral.getNextClockwiseEdge(hex1, top), expected)
@@ -43,8 +38,8 @@ class SpiralIteratorTest {
 
     @Test
     fun getNextNewTile() {
-        val hex1 = board.getTile(first)!!
-        val hex2 = board.getTile(second)!!
+        val hex1 = board.getHex(first)!!
+        val hex2 = board.getHex(second)!!
         val top = hex1.edge(EdgeNumber(0))
         val secondTop = hex2.edge(EdgeNumber(0))
         assertEquals(spiral.getNextNewTile(hex1, top), Pair(hex2, secondTop))
@@ -52,8 +47,8 @@ class SpiralIteratorTest {
 
     @Test
     fun getNextNewTile2() {
-        val hex2 = board.getTile(second)!!
-        val hex3 = board.getTile(third)!!
+        val hex2 = board.getHex(second)!!
+        val hex3 = board.getHex(third)!!
         val top = hex2.edge(EdgeNumber(0))
         val thirdTopRight = hex3.edge(EdgeNumber(1))
         assertEquals(spiral.getNextNewTile(hex2, top), Pair(hex3, thirdTopRight))
@@ -63,7 +58,7 @@ class SpiralIteratorTest {
     fun testMediumBoard() {
         val b = MediumBoard()
         val spiralIterator = SpiralIterator(b)
-        spiralIterator.startingTile = b.getTile(0, 0)!!
+        spiralIterator.startingTile = b.getHex(HexCoordinate(0, 0))
         val hexes = spiralIterator.getHexes()
         assertEquals(MediumBoard.coords, hexes.map { it.coords })
     }
@@ -77,9 +72,10 @@ class MediumBoard : Board() {
     }
 
     init {
-        val tileBag = TileBag()
+        var tileBag = TileBag.newBag()
         for (c in coords) {
-            val hex = tileBag.grab()
+            val (newBag, hex) = tileBag.removeRandom()
+            tileBag = newBag
             hex.coords = c
             addHex(hex)
         }

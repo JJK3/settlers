@@ -23,7 +23,10 @@ abstract class ActionCard : Card {
 }
 
 data class ResourceCard(val resource: Resource) : Card
-abstract class DevelopmentCard : ActionCard(), Purchaseable
+abstract class DevelopmentCard : ActionCard(), Purchaseable {
+    override val price = listOf(Resource.Ore, Resource.Sheep, Resource.Wheat)
+}
+
 /**
  * Allows a player to move the bandit. This can be played before the dice are rolled.
  */
@@ -32,7 +35,7 @@ class SoldierCard : DevelopmentCard() {
         val old_bandit_hex: Hex = turn.admin.board.tiles.values.find(Hex::has_bandit) ?: throw IllegalArgumentException(
                 "Could not find hex with bandit")
         val banitHex = turn.player.move_bandit(old_bandit_hex).coords
-        val actual__hex: Hex = turn.admin.board.getTile(banitHex) ?: throw IllegalArgumentException(
+        val actual__hex: Hex = turn.admin.board.getHex(banitHex) ?: throw IllegalArgumentException(
                 "Could not find hex $banitHex")
         turn.move_bandit(actual__hex)
     }
@@ -42,7 +45,7 @@ class SoldierCard : DevelopmentCard() {
 class RoadBuildingCard : DevelopmentCard() {
     override fun use(turn: Turn) {
         turn.player.give_free_roads(2)
-        log.debug("Giving 2 roads to ${turn.player}: ${turn.player.purchased_pieces}")
+        log.debug("Giving 2 roads to ${turn.player}: ${turn.player.purchasedRoads}")
     }
 }
 
@@ -65,7 +68,7 @@ class ResourceMonopolyCard : DevelopmentCard() {
     }
 }
 
-/** Lets a user select 2 resources and add them to his hand */
+/** Lets a user select 2 resources and plus them to his hand */
 class YearOfPlentyCard : DevelopmentCard() {
     override fun use(turn: Turn) {
         val res = turn.player.select_resource_cards(Resource.values().toList(), 2, Admin.SELECT_CARDS_YEAR_OF_PLENTY)
@@ -76,41 +79,42 @@ class YearOfPlentyCard : DevelopmentCard() {
     }
 }
 
-/** Lets a user select 2 resources and add them to his hand */
+/** Lets a user select 2 resources and plus them to his hand */
 class VictoryPointCard : DevelopmentCard() {
     override fun use(turn: Turn) {
-        turn.player.add_extra_victory_points(1)
+
     }
 }
 
-abstract class RandomBag<A> {
-    private var items: List<A> = emptyList()
+open class Bag<A>(protected val items: List<A> = emptyList()) {
     private val rand = Random(System.currentTimeMillis())
-    fun add(item: A) {
-        items += item
+    fun size() = items.size
+    fun isEmpty() = size() == 0
+    operator fun plus(item: A): Bag<A> = Bag(items + item)
+    fun removeRandom(): Pair<Bag<A>, A> {
+        if (!items.isEmpty()) {
+            val i = rand.nextInt(items.size)
+            return pick_and_remove(i)
+        }
+        throw IllegalStateException("Cannot removeRandom from an empty bag")
     }
 
-    fun grab(): A {
-        if (items.isEmpty()) throw IllegalStateException("Cannot grab from an empty bag")
-        val i = rand.nextInt(items.size)
-        return pick_and_remove(i)
-    }
-
-    fun next() = pick_and_remove(0)
-    fun pick_and_remove(i: Int): A {
+    private fun next() = pick_and_remove(0)
+    private fun pick_and_remove(i: Int): Pair<Bag<A>, A> {
         val grabbedItem = items[i]
-        items = items.filterIndexed { index, _ -> index != i }
-        return grabbedItem
+        return Pair(Bag(items.filterIndexed { index, _ -> index != i }), grabbedItem)
     }
 }
 
 /** A randomized collection of development cards. */
-class DevelopmentCardBag : RandomBag<DevelopmentCard>() {
-    init {
-        (1..14).forEach { add(SoldierCard()) }
-        (1..2).forEach { add(RoadBuildingCard()) }
-        (1..2).forEach { add(ResourceMonopolyCard()) }
-        (1..2).forEach { add(YearOfPlentyCard()) }
-        (1..5).forEach { add(VictoryPointCard()) }
+object DevelopmentCardBag {
+    fun create(): Bag<DevelopmentCard> {
+        var bag = Bag<DevelopmentCard>()
+        (1..14).forEach { bag += SoldierCard() }
+        (1..2).forEach { bag += RoadBuildingCard() }
+        (1..2).forEach { bag += ResourceMonopolyCard() }
+        (1..2).forEach { bag += YearOfPlentyCard() }
+        (1..5).forEach { bag += VictoryPointCard() }
+        return bag
     }
 }

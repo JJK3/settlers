@@ -4,9 +4,6 @@ import org.junit.Test
 
 import org.junit.Assert.*
 
-/**
- * Copyright (c) 2017 Ovitas Inc, All rights reserved.
- */
 class NodeTest {
 
     @Test fun testGetAdjecentNodes() {

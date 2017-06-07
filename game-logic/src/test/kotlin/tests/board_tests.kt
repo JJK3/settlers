@@ -115,9 +115,9 @@ class NodeTest2 {
             assertTrue(x.size <= 3)
         }
 
-        assertEquals(2, board.getTile(0, 0)!!.nodes[0].getAdjecentNodes().size)
-        assertEquals(3, board.getTile(0, 1)!!.nodes[5].getAdjecentNodes().size)
-        assertEquals(3, board.getTile(1, 1)!!.nodes[3].getAdjecentNodes().size)
+        assertEquals(2, board.getHex(HexCoordinate(0, 0)).nodes[0].getAdjecentNodes().size)
+        assertEquals(3, board.getHex(HexCoordinate(0, 1)).nodes[5].getAdjecentNodes().size)
+        assertEquals(3, board.getHex(HexCoordinate(1, 1)).nodes[3].getAdjecentNodes().size)
     }
 
     @Test fun testNodeHexes() {
@@ -147,9 +147,9 @@ class NodeTest2 {
          assertEquals(2.0 / 36.0, Hex.dice_probs[3]!!, 0.0)
 
          var board = StandardBoard()
-         board.getTile(1, 1)!!.number = 3
-         board.getTile(0, 2)!!.number = 2
-         board.getTile(0, 1)!!.number = 12
+         board.getHex(1, 1)!!.randomNumber = 3
+         board.getHex(0, 2)!!.randomNumber = 2
+         board.getHex(0, 1)!!.randomNumber = 12
          val n = board.getNode(1, 1, 5)!!.get_hex_prob()
          assertEquals((4.0 / 36.0), n, 0.0)
      }*/
@@ -164,10 +164,10 @@ class HexTest2 {
 /*
     @Test fun testGetClockwiseConnectingEdge() {
         var board = MiniBoard()
-        assertEquals(board.getTile(0, 0)!!.getClockwiseConnectingEdge().coords, board.getEdge(0, 0, 3)!!.coords)
-        assertEquals(board.getTile(0, 1)!!.getClockwiseConnectingEdge().coords, board.getEdge(0, 1, 4)!!.coords)
-        assertEquals(board.getTile(-1, 1)!!.getClockwiseConnectingEdge().coords, board.getEdge(-1, 1, 0)!!.coords)
-        assertEquals(board.getTile(-1, 0)!!.getClockwiseConnectingEdge().coords, board.getEdge(-1, 0, 1)!!.coords)
+        assertEquals(board.getHex(0, 0)!!.getClockwiseConnectingEdge().coords, board.getEdge(0, 0, 3)!!.coords)
+        assertEquals(board.getHex(0, 1)!!.getClockwiseConnectingEdge().coords, board.getEdge(0, 1, 4)!!.coords)
+        assertEquals(board.getHex(-1, 1)!!.getClockwiseConnectingEdge().coords, board.getEdge(-1, 1, 0)!!.coords)
+        assertEquals(board.getHex(-1, 0)!!.getClockwiseConnectingEdge().coords, board.getEdge(-1, 0, 1)!!.coords)
     }
 */
 
@@ -180,8 +180,8 @@ class HexTest2 {
 
     @Test fun testStandardBoard() {
         var board = StandardBoard()
-        assertTrue(board.getTile(0, 0)!!.isOnOutside())
-        assertFalse(board.getTile(0, 1)!!.isOnOutside())
+        assertTrue(board.getHex(HexCoordinate(0, 0)).isOnOutside())
+        assertFalse(board.getHex(HexCoordinate(0, 1)).isOnOutside())
     }
 
     @Test fun testDirections() {
@@ -214,10 +214,11 @@ class HexTest2 {
 
 class MiniBoard : Board() {
     init {
-        val tileBag = TileBag()
+        var tileBag = TileBag.newBag()
         var coords = listOf(HexCoordinate(0, 0), HexCoordinate(0, 1), HexCoordinate(-1, 0), HexCoordinate(-1, 1))
         for (c in coords) {
-            val hex = tileBag.grab()
+            val (newBag, hex) = tileBag.removeRandom()
+            tileBag = newBag
             hex.coords = c
             addHex(hex)
         }
@@ -229,7 +230,7 @@ class BoardTest {
         for (hex in board.tiles.values) {
             assertEquals(hex.edges.size, 6)
             EdgeNumber.ALL.forEach { i ->
-                val opposite_hex = board.getTile(hex.coords.getOppositeHex(i))
+                val opposite_hex = board.getHexOrNull(hex.coords.getOppositeHex(i))
                 if (opposite_hex != null) {
                     assertEquals(opposite_hex.edge(i.opposite()).coords(), hex.edge(i).coords())
                 }
@@ -249,8 +250,10 @@ class BoardTest {
         var board = MiniBoard()
         assertEquals(board.allEdges().size, 19)
         assertEquals(board.allNodes().size, 16)
-        assertEquals(board.getTile(0, 0)!!.edges[3].coords(), board.getTile(0, 1)!!.edges[0].coords())
-        assertEquals(board.getTile(0, 0)!!.edges[4].coords(), board.getTile(-1, 0)!!.edges[1].coords())
+        assertEquals(board.getHex(HexCoordinate(0, 0)).edges[3].coords(),
+                board.getHex(core.HexCoordinate(0, 1)).edges[0].coords())
+        assertEquals(board.getHex(HexCoordinate(0, 0)).edges[4].coords(),
+                board.getHex(core.HexCoordinate(-1, 0)).edges[1].coords())
         check_opposing_edges(board)
     }
 
@@ -300,7 +303,7 @@ class BoardTest {
         var board = StandardBoard()
         board.tiles.values.forEach { it.number = 12 }
 
-        var tile = board.getTile(0, 0)!!
+        var tile = board.getHex(HexCoordinate(0, 0))
         tile.has_bandit = false
         tile.number = 5
         tile.nodes[0].city = City("red")
@@ -311,7 +314,7 @@ class BoardTest {
         cards = board.getCards(5, "blue")
         assertEquals(cards.size, 1)
         tile.nodes[1].city = Settlement("red")
-        board.getTile(1, 0)!!.number = 2
+        board.getHex(HexCoordinate(1, 0)).number = 2
         cards = board.getCards(5, "red")
         assertEquals(cards.size, 3)
     }
@@ -319,7 +322,7 @@ class BoardTest {
     // test that cities and settlements produce the right cards.
     @Test fun testGetCardsWithBandit() {
         var board = StandardBoard()
-        var tile = board.getTile(0, 0)!!
+        var tile = board.getHex(HexCoordinate(0, 0))
         tile.has_bandit = true
         tile.number = 5
         tile.nodes[0].city = City("red")
@@ -327,7 +330,7 @@ class BoardTest {
         assertEquals(board.getCards(5, "red").size, 0)
         assertEquals(board.getCards(5, "blue").size, 0)
         tile.nodes[1].city = Settlement("red")
-        board.getTile(1, 0)!!.number = 2
+        board.getHex(HexCoordinate(1, 0)).number = 2
         assertEquals(board.getCards(5, "red").size, 0)
         assertEquals(board.getCards(5, "blue").size, 0)
     }
@@ -385,7 +388,7 @@ class BoardTest {
         assertEquals(i, 2)
     }
 
-    //Test the number of nodes that are created in a standard board.
+    //Test the randomNumber of nodes that are created in a standard board.
     @Test fun testInsertNodes() {
         var board = StandardBoard()
         // count the nodes by edges
@@ -417,7 +420,7 @@ class BoardTest {
         assertEquals(portNodes.size, 18)
     }
 
-    /*  "dev_card_bag" should "grab and remove cards" in {
+    /*  "dev_card_bag" should "removeRandom and remove cards" in {
       var dcb =  DevelopmentCardBag
       for (i <- 1 to 25){ 
         var card = dcb.get_card    
@@ -470,7 +473,7 @@ object HugeBoard {
 class InlandPortBoard : StandardBoard() {
     /*   override fun subclass_init() {
            super.subclass_init()
-           var portEdge = getTile(0, 2)!!.edges[2]
+           var portEdge = getHex(0, 2)!!.edges[2]
            var port = Port(null, 3)
            for (n in portEdge.nodes) {
                n.port = port
@@ -480,16 +483,18 @@ class InlandPortBoard : StandardBoard() {
 
 class TileBagTest {
     @Test fun testGetHex() {
-        var bag = TileBag()
+        var bag = TileBag.newBag()
         for (i in 1..19) {
-            bag.grab()
+            val (newBag, hex) = bag.removeRandom()
+            bag = newBag
         }
     }
 
     @Test fun testGetHex2() {
-        var bag = TileBag()
+        var bag = TileBag.newBag()
         for (i in 1..19) {
-            bag.grab()
+            val (newBag, hex) = bag.removeRandom()
+            bag = newBag
         }
     }
 

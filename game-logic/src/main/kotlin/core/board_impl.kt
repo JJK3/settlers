@@ -3,100 +3,120 @@ package core
 import java.util.*
 
 /** The randomized bag of tile hexes and ports */
-class TileBag(randAdd: Int = 0) : RandomBag<Hex>() {
-    //(randAdd) add a number of completely random tiles
-    init {
-        add(Hex(null, 0))
+object TileBag {
+    fun newBag(randAdd: Int = 0): Bag<Hex> {
+        var bag = Bag<Hex>()
+        bag += Hex(null, 0)
         (1..3).forEach {
-            add(Hex(Resource.Brick, 0))
-            add(Hex(Resource.Ore, 0))
+            bag += Hex(Resource.Brick, 0)
+            bag += Hex(Resource.Ore, 0)
         }
         (1..4).forEach {
-            add(Hex(Resource.Wheat, 0))
-            add(Hex(Resource.Wood, 0))
-            add(Hex(Resource.Sheep, 0))
+            bag += Hex(Resource.Wheat, 0)
+            bag += Hex(Resource.Wood, 0)
+            bag += Hex(Resource.Sheep, 0)
         }
-        (1..randAdd).forEach { i ->
+        (1..randAdd).forEach {
             val randomResource = Resource.values().toList().pick_random()
-            add(Hex(randomResource, 0))
+            bag += Hex(randomResource, 0)
         }
+        return bag
     }
 }
 
-class StandardPortBag : RandomBag<Port>() {
-    init {
-        add(Port(Resource.Brick, 2))
-        add(Port(Resource.Wheat, 2))
-        add(Port(Resource.Wood, 2))
-        add(Port(Resource.Ore, 2))
-        add(Port(Resource.Sheep, 2))
-        (1..4).forEach { i -> add(Port(null, 3)) }
+object StandardPortBag {
+    fun newBag(): Bag<Port> {
+        var bag = Bag<Port>()
+        bag += Port(Resource.Brick, 2)
+        bag += Port(Resource.Wheat, 2)
+        bag += Port(Resource.Wood, 2)
+        bag += Port(Resource.Ore, 2)
+        bag += Port(Resource.Sheep, 2)
+        (1..4).forEach { bag += Port(null, 3) }
+        return bag
     }
 }
 
-open class NumberBag : RandomBag<Int>() {
-    init {
-        listOf(5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11).forEach { add(it) }
-        //@items = (2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12)
-    }
+class PiecesForSale(val color: String) {
+    var cities: Bag<City> = Bag((0..4).map { City(color) })
+    var settlements: Bag<Settlement> = Bag((0..5).map { Settlement(color) })
+    var roads: Bag<Road> = Bag((0..15).map { Road(color) })
+    fun takeCity(): City = cities.removeRandom().also { cities = it.first }.second
+    fun takeSettlement(): Settlement = settlements.removeRandom().also { settlements = it.first }.second
+    fun takeRoad(): Road = roads.removeRandom().also { roads = it.first }.second
+    fun putBack(piece: City) = { cities += piece }
+    fun putBack(piece: Settlement) = { settlements += piece }
+    fun putBack(piece: Road) = { roads += piece }
+}
+
+
+val NumberBag = Bag(listOf(5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11))
+
+object StandardColors {
+    val colors = listOf("red", "blue", "white", "orange", "green", "brown")
 }
 
 /** The Standard Board */
 open class StandardBoard : Board(true) {
     init {
-        var coords: List<HexCoordinate> = listOf(HexCoordinate(-2, 1), HexCoordinate(-2, 2), HexCoordinate(-2, 3),
+        val coords: List<HexCoordinate> = listOf(HexCoordinate(-2, 1), HexCoordinate(-2, 2), HexCoordinate(-2, 3),
                 HexCoordinate(-1, 0), HexCoordinate(-1, 1), HexCoordinate(-1, 2), HexCoordinate(-1, 3),
                 HexCoordinate(0, 0), HexCoordinate(0, 1), HexCoordinate(0, 2), HexCoordinate(0, 3), HexCoordinate(0, 4),
                 HexCoordinate(1, 0), HexCoordinate(1, 1), HexCoordinate(1, 2), HexCoordinate(1, 3),
                 HexCoordinate(2, 1), HexCoordinate(2, 2), HexCoordinate(2, 3))
 
-        val tiles = TileBag()
-        val numberBag = NumberBag()
+        var tiles: Bag<Hex> = TileBag.newBag()
+        var numberBag: Bag<Int> = NumberBag
 
         for (c in coords) {
-            val hex = tiles.grab()
+            val (newTiles, hex) = tiles.removeRandom()
+            tiles = newTiles
             hex.coords = c
             addHex(hex)
         }
 
         SpiralIterator(this).getHexes().forEach { tile ->
             if (tile.resource != null) {
-                tile.number = numberBag.next()
+                val (newBag, grabbedNumber) = numberBag.removeRandom()
+                numberBag = newBag
+                tile.number = grabbedNumber
             }
         }
 
         //Ports
-        val ports = StandardPortBag()
-        var coords2 = listOf(EdgeCoordinate(1, 0,
+        var ports: Bag<Port> = StandardPortBag.newBag()
+        val coords2 = listOf(EdgeCoordinate(1, 0,
                 0), EdgeCoordinate(2, 1, 1), EdgeCoordinate(2, 2, 2), EdgeCoordinate(1, 3, 2), EdgeCoordinate(0, 4, 3),
                 EdgeCoordinate(-1, 3, 4), EdgeCoordinate(-2, 2, 4), EdgeCoordinate(-2, 1, 5), EdgeCoordinate(-1, 0, 0))
 
         for (c in coords2) {
-            var portEdge = getEdge(c)!!
-            var port = ports.grab()
+            val portEdge = getEdge(c)
+            val (newPorts, port) = ports.removeRandom()
+            ports = newPorts
             for (n in portEdge.nodes()) {
                 n.port = port
             }
         }
-        enforceBandit()
+
+        StandardColors.colors.forEach { piecesForSale.put(it, PiecesForSale(it)) }
+        placeBanditOnDesert()
     }
 }
 
-class NSizeNumberBag(val size: Int) : NumberBag() {
-
+object NSizeNumberBag {
     val rand = Random()
-
-    init {
+    fun create(size: Int): Bag<Int> {
+        var bag = Bag<Int>()
         for (i in 1..size) {
-            add(number())
+            bag += randomNumber()
         }
+        return bag
     }
 
-    //Pick at a hex number at random
-    fun number(): Int {
+    fun randomNumber(): Int {
         val n = rand.nextInt(10) + 2
         if (n == 7) {
-            return number()
+            return randomNumber()
         } else {
             return n
         }
@@ -104,9 +124,9 @@ class NSizeNumberBag(val size: Int) : NumberBag() {
 }
 
 // a "Square" board where x and y dimenstions are the same.
-class SquareBoard(val side: Int) : StandardBoard() {
+class SquareBoard(side: Int) : StandardBoard() {
     init {
-        var bag = TileBag(side * side)
+        var bag: Bag<Hex> = TileBag.newBag(side * side)
         //Tiles
         var coords: List<Pair<Int, Int>> = emptyList()
         for (x in 1..side) {
@@ -116,14 +136,17 @@ class SquareBoard(val side: Int) : StandardBoard() {
         }
 
         for (c in coords) {
-            var hex = bag.grab()
+            val (newTiles, hex) = bag.removeRandom()
+            bag = newTiles
             hex.coords = HexCoordinate(c.first, c.second)
             addHex(hex)
         }
 
-        val number_bag = NSizeNumberBag(side * side)
+        var numbers: Bag<Int> = NSizeNumberBag.create(side * side)
         tiles.values.filterNot { it.resource == null }.forEach { tile ->
-            tile.number = number_bag.grab()
+            val (newNumbers, grabbed) = numbers.removeRandom()
+            tile.number = grabbed
+            numbers = newNumbers
         }
     }
 }

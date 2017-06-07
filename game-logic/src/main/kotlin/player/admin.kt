@@ -91,13 +91,6 @@ open class Admin(
     var dice_handler: DiceHandler = StandardDiceHandler(this)
     var game_future: Future<Map<PlayerReference, Int>>? = null
     var all_futures: List<Future<Any?>> = emptyList() /*Keep track of all futures used in this admin. */
-    fun getPrice(pieceClass: Purchaseable): List<Resource> = when (pieceClass) {
-        is Settlement -> listOf(Resource.Wheat, Resource.Brick, Resource.Wood, Resource.Sheep)
-        is City -> listOf(Resource.Ore, Resource.Ore, Resource.Ore, Resource.Wheat, Resource.Wheat)
-        is Road -> listOf(Resource.Wood, Resource.Brick)
-        is DevelopmentCard -> listOf(Resource.Ore, Resource.Sheep, Resource.Wheat)
-        else -> emptyList()
-    }
 
     /** Returns a list of the two dice rolls */
     fun rollDice(): Pair<Int, Int> {
@@ -184,16 +177,17 @@ open class Admin(
         log.debug("Checking for stalemate")
         players.forEach { player ->
             val color = player.color
+            val piecesForSale = board.getPiecesForSale(color)
             val settlementSpots = board.getValidSettlementSpots(true, color)
-            if (Math.min(settlementSpots.size, player.countSettlementsLeft()) > 0) {
+            if (Math.min(settlementSpots.size, piecesForSale.settlements.size()) > 0) {
                 return false
             }
             val citySpots = board.getValidCitySpots(color).size
-            if (Math.min(citySpots, player.countCitiesLeft()) > 0) {
+            if (Math.min(citySpots, piecesForSale.cities.size()) > 0) {
                 return false
             }
             val roadSpots = board.getValidRoadSpots(color).size
-            if (Math.min(roadSpots, player.countRoadsLeft()) > 0) {
+            if (Math.min(roadSpots, piecesForSale.roads.size()) > 0) {
                 return false
             }
         }
@@ -234,7 +228,7 @@ open class Admin(
     fun count_dev_cards(playerReference: PlayerReference) = getPlayer(playerReference.color)?.count_dev_cards()
     /** Finds the player , the largest army, or nil if no one has it. */
     fun who_has_largest_army(): PlayerReference? {
-        //The largest number of soldier cards
+        //The largest randomNumber of soldier cards
         val highest_count = players.map { countSoliders(it) }.max() ?: 0
         val who_has_the_most = players.filter { countSoliders(it) == highest_count }
         var result: PlayerReference? = null
@@ -275,23 +269,10 @@ open class Admin(
      */
     fun other_players(player: PlayerReference): List<Player> = players.filter { it.color != player.color }
 
-    /**
-     * Send a chat message to all users
-     * [player] is who wrote the message
-     */
-    fun chat_msg(player: Player, msg: String) {
-        getPlayer(player.color)?.let { p ->
-            players.forEach { it.chat_msg(p.info(), msg) }
-        }
-    }
-
-    /** sends a message to all players from the admin */
-    fun admin_msg(msg: String) = players.forEach { it.chat_msg(null, msg) }
-
     /** Get information on who is winning, who has longest road and who has largest army */
     fun get_player_stats(): Map<String, Any?> {
         val leading_score = players.map { getScore(it) }.max()
-        val leaders = players.filter { getScore(it) == leading_score }.map { it.info() }
+        val leaders = players.filter { getScore(it) == leading_score }.map(Player::info)
         val la = who_has_largest_army()
         return mapOf(Pair("leaders", leaders),
                 Pair("largest_army", la),
@@ -308,15 +289,6 @@ open class Admin(
                 previous_player_with_longest_road = p
             }
         }
-    }
-
-    /**
-     * Gets a piece from a player to place
-     * raises an error if the player does not have the piece
-     */
-    fun <T> get_player_piece(player: Player, pieceType: Class<T>): T {
-        val piece = player.piecesLeft.filterIsInstance(pieceType).firstOrNull()
-        return piece ?: throw  RuleException("Player: ${player.full_name()} has no ${pieceType}s left")
     }
 
     fun offer_quote(quote: Quote, player_reference: PlayerReference) {
@@ -428,9 +400,8 @@ open class Admin(
         }
         this.state = GameState.Running
         try {
-            log.info("Starting Game")
-            log.info(" , " + players.size + " players")
-            log.info(" max score:" + max_points)
+            log.info("Starting Game with ${players.size} players")
+            log.info(" max score:$max_points")
             send_observer_msg { it.game_start() }
 
             var roundCount = 0
@@ -555,8 +526,8 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
                             Admin.SELECT_CARDS_ROLLED_7)
                     if (chosen_cards.size != how_many_cards_to_lose)
                         throw  RuleException(
-                                "You did not select the right number of cards. expected:" + how_many_cards_to_lose + " found:" + chosen_cards.size)
-                    p.del_cards(chosen_cards.map { ResourceCard(it) }, 4)
+                                "You did not select the right randomNumber of cards. expected:" + how_many_cards_to_lose + " found:" + chosen_cards.size)
+                    p.del_cards(chosen_cards.map(::ResourceCard), 4)
                 }
             } catch (re: RuleException) {
                 log.error("REPLACING PLAYER WITH BOT: " + p, re)
@@ -568,7 +539,7 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
         log.info("Rolled a 7, move the bandit.")
         admin.board.tiles.values.find { it.has_bandit }?.let { current_bandit_hex ->
             val _hex = admin.currentTurn()!!.player.move_bandit(current_bandit_hex)
-            admin.board.getTile(_hex.coords)?.let { local_hex ->
+            admin.board.getHex(_hex.coords).let { local_hex ->
                 admin.currentTurn()!!.move_bandit(local_hex)
             }
         }

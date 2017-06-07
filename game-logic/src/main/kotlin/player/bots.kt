@@ -5,10 +5,10 @@ import core.*
 //only abstract since i haven't finished this yet
 abstract class Bot(first_name: String,
                    last_name: String,
-                   admin: Admin,
+                   val admin: Admin,
                    cities: Int = 4,
                    settlements: Int = 5,
-                   roads: Int = 15) : Player(first_name, last_name, admin, cities, settlements, roads) {
+                   roads: Int = 15) : Player(first_name, last_name, cities, settlements, roads) {
 
     var delay = 0;
     var chatter = false
@@ -39,17 +39,17 @@ class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
          * Really, this is a bit of a hack, since the board SHOULD be updated before the method is done.
          */
         //timeout(10) do
-        //while board.getTile(sx,sy).nodes[sn].city == null
+        //while board.getHex(sx,sy).nodes[sn].city == null
         //  sleep(0.1)
         // }
         /// }
 
-        val settlementNode = player.board!!.getNode(node.coords())!!
+        val settlementNode = player.board!!.getNode(node.coords())
         if (!settlementNode.hasCity()) {
             throw IllegalStateException("Node (${node.coords()}) Should have a Settlement, but it doesn't")
         }
         val road_spots = player.board!!.getValidRoadSpots(player.color, settlementNode)
-        road_spots.firstOrNull()?.let { turn.place_road(it.coords()) }
+        road_spots.firstOrNull()!!.let { turn.place_road(it.coords()) }
         turn.done()
     }
 }
@@ -117,21 +117,21 @@ class RandomPlayer(first_name: String,
                 if (!turn.has_rolled()) {
                     turn.roll_dice()
                 }
-
+                val piecesForSale = board!!.getPiecesForSale(color)
                 val city = City(color)
-                if (can_afford(listOf(city)) && countCitiesLeft() > 0) {
+                if (can_afford(listOf(city)) && piecesForSale.cities.size()> 0) {
                     var spots = board!!.getValidCitySpots(color)
                     if (spots.isNotEmpty()) {
                         spots = spots.sortedBy { Dice.getProbability(it) }
                         turn.place_city(spots.last().coords())
                         //turn.taint
-                        if (chatter)
-                            admin.chat_msg(this, "We built this city...on wheat && ore...")
+                        /*if (chatter)
+                            admin.chat_msg(this, "We built this city...on wheat && ore...")*/
                         log.info("<BOT: " + full_name() + ": Bought City> ")
                     }
                 }
 
-                if (!admin.is_game_done() && can_afford(listOf(Settlement(color))) && countSettlementsLeft() > 0) {
+                if (!admin.is_game_done() && can_afford(listOf(Settlement(color))) && piecesForSale.settlements.size() > 0) {
                     val spots = board!!.getValidSettlementSpots(true, color)
                     if (spots.isNotEmpty()) {
                         //spots.sort!{|a,b| a.getProbability <=> b.getProbability}
@@ -141,7 +141,7 @@ class RandomPlayer(first_name: String,
                     }
                 }
 
-                if (!admin.is_game_done() && can_afford(listOf(Road(color))) && countRoadsLeft() > 0) {
+                if (!admin.is_game_done() && can_afford(listOf(Road(color))) && piecesForSale.roads.size() > 0) {
                     val spots = board!!.getValidRoadSpots(color)
                     val longest_road = board!!.hasLongestRoad(color)
                     if (board!!.getValidSettlementSpots(true, color).size < 4) {
@@ -172,7 +172,7 @@ class RandomPlayer(first_name: String,
         } finally {
             //if turn.tainted?
             update_board(board!!)
-            turn.done()
+            turn.force_done()
         }
     }
 
@@ -214,7 +214,6 @@ class RandomPlayer(first_name: String,
 class SinglePurchasePlayer(first_name: String,
                            last_name: String,
                            admin: Admin,
-                           board: Board,
                            cities: Int = 0,
                            settlements: Int = 0,
                            roads: Int = 0
@@ -245,13 +244,13 @@ class SinglePurchasePlayer(first_name: String,
                 if (desired_piece != null) {
                     cards_needed = calculate_cards_needed(desired_piece!!).distinct()
                     var break1 = false
-                    (1..2).forEach { i ->
+                    (1..2).forEach {
                         //Limit this to 2 times
                         if (!break1) {
                             log.debug("Bot " + this + " is attempting to trade")
                             var cardsIDontNeed = resource_cards().map { it.resource }
                             if (desired_piece != null) {
-                                val price = admin.getPrice(desired_piece!!)
+                                val price = desired_piece!!.price
                                 cardsIDontNeed = cardsIDontNeed.diff_without_unique(price)
                             }
                             cardsIDontNeed = cardsIDontNeed.diff_without_unique(cards_needed)
@@ -314,7 +313,7 @@ class SinglePurchasePlayer(first_name: String,
 
         //First try to only get rid of cards that i don't need
         var remaining_cards = cards.diff_without_unique(cards_needed)
-        while (remaining_cards.size > 0 && selection.size < count) {
+        while (remaining_cards.isNotEmpty() && selection.size < count) {
             val (chosen_card, _remaining_cards) = remaining_cards.remove_random()
             remaining_cards = _remaining_cards
             selection += chosen_card
@@ -335,25 +334,26 @@ class SinglePurchasePlayer(first_name: String,
 
     //calculate which piece to try for based on the current turn.
     private fun calculate_desired_piece(turn: Turn): Purchaseable? {
-        if (countCitiesLeft() > 0) {
+        val piecesForSale = board!!.getPiecesForSale(color)
+        if (piecesForSale.cities.size() > 0) {
             val spots = board!!.getValidCitySpots(color)
             if (spots.isNotEmpty()) {
                 return City(color)
             }
         }
-        if (countSettlementsLeft() > 0) {
+        if (piecesForSale.settlements.size() > 0) {
             val spots = board!!.getValidSettlementSpots(true, color)
             if (spots.isNotEmpty()) {
                 return Settlement(color)
             }
         }
-        if (countRoadsLeft() > 0) {
+        if (piecesForSale.roads.size() > 0) {
             val spots = board!!.getValidRoadSpots(color)
             if (spots.isNotEmpty()) {
                 return Road(color)
             }
         }
-        log.warn("$this can't figure out where to build anything. Pieces left:$piecesLeft")
+        log.warn("$this can't figure out where to build anything. Pieces left:$piecesForSale")
         return null
     }
 
@@ -361,8 +361,7 @@ class SinglePurchasePlayer(first_name: String,
     // the desired_piece
     // Class -> Array of Cards
     fun calculate_cards_needed(piece: Purchaseable): List<Resource> {
-        val price = admin.getPrice(piece)
-        return price.diff_without_unique(resource_cards().map { it.resource })
+        return piece.price.diff_without_unique(resource_cards().map { it.resource })
     }
 
     // Place your desired piece
@@ -370,9 +369,9 @@ class SinglePurchasePlayer(first_name: String,
     fun place_desired_piece() {
         when (desired_piece) {
             is Road -> {
-                var spots = board!!.getValidRoadSpots(color)
+                val spots = board!!.getValidRoadSpots(color)
 
-                // Organize the edges by the number of adjecent roads
+                // Organize the edges by the randomNumber of adjecent roads
                 // and whether or not they have cities on them
 
                 //spots = spots.sort_and_partition{|e| e.getAdjecentEdges.size}
@@ -419,7 +418,7 @@ class SinglePurchasePlayer(first_name: String,
                     throw IllegalStateException("No Valid Spots")
                 }
                 //city_spots.sort!{|a,b| a.getProbability <=> b.getProbability}
-                if (chatter) admin.chat_msg(this, "We built this city...on wheat and ore...")
+                /*if (chatter) admin.chat_msg(this, "We built this city...on wheat and ore...")*/
                 current_turn!!.place_city(city_spots.last().coords())
             }
             else -> throw IllegalStateException("Invalid desired_piece")

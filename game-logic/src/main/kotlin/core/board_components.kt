@@ -1,8 +1,9 @@
 package core
 
-import java.util.*
+interface Purchaseable {
+    val price: List<Resource>
+}
 
-interface Purchaseable
 sealed class BoardPiece(val color: String) : Purchaseable {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -22,15 +23,20 @@ sealed class BoardPiece(val color: String) : Purchaseable {
 
 open class City(color: String) : BoardPiece(color) {
     open val points = 2
+    override val price = listOf(Resource.Ore, Resource.Ore, Resource.Ore, Resource.Wheat, Resource.Wheat)
 }
 
 class Settlement(color: String) : City(color) {
     override val points = 1
+    override val price = listOf(Resource.Wheat, Resource.Brick, Resource.Wood, Resource.Sheep)
 }
 
-class Road(color: String) : BoardPiece(color)
-class Port(val kind: Resource?, val rate: Int)
+class Road(color: String) : BoardPiece(color) {
+    override val price = listOf(Resource.Wood, Resource.Brick)
+}
 
+class Port(val kind: Resource?, val rate: Int)
 enum class Resource {
     Ore, Wood, Sheep, Brick, Wheat
 }
+

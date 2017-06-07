@@ -56,6 +56,7 @@ class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = 
             newEdge.hexes = replaceMe(e.hexes)
             e
         }.toTypedArray()
+        hex.has_bandit = has_bandit
         return hex
     }
 
@@ -95,7 +96,6 @@ class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = 
         setNode(otherHex.node(otherEdgeNum.nextNode()), edgeNum.prevNode())
     }
 
-    fun nextEdge(edge: Edge) = edge(getEdgeIndex(edge).next())
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false

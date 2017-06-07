@@ -26,7 +26,7 @@ object Dice {
         probabilities = temp_dice_probs
     }
 
-    /** The probabability for 2 dice to roll the given number. */
+    /** The probabability for 2 dice to roll the given randomNumber. */
     fun getProbability(number: Int) = probabilities.getOrElse(number) { 0.0 }
 
     fun getProbability(hex: Hex): Double = getProbability(hex.number)

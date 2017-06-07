@@ -31,7 +31,7 @@ interface GameObserver {
      * This is called by the admin whenever a player steals cards from another player
      * @param theif the player who took the cards
      * @param victim the player who lost cards
-     * @param num_cards the number of cards stolen
+     * @param num_cards the randomNumber of cards stolen
      */
     fun player_stole_card(theif: PlayerReference, victim: PlayerReference, num_cards: Int): Unit {
     }
@@ -45,7 +45,7 @@ interface GameObserver {
     /**
      * Inform the observer that the game has finished.
      * @param winner the player who won
-     * @param points the number of points they won ,.
+     * @param points the randomNumber of points they won ,.
      */
     fun game_end(winner: PlayerReference, points: Int): Unit {
     }

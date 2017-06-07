@@ -4,6 +4,7 @@ import core.Board
 import core.pick_random
 import core.remove_random
 import player.*
+import java.io.Serializable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeoutException
 
@@ -11,6 +12,8 @@ import java.util.concurrent.TimeoutException
 object SettlersExecutor {
     val executor = Executors.newFixedThreadPool(50)
 }
+
+class Message(val message: String, val sender: PlayerReference?) : Serializable
 
 class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_timeout_seconds: Int = 240,
                   game_timeout: Int = 1800) : Admin(board, max_players, max_points, turn_timeout_seconds,
@@ -24,7 +27,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
         val can_join = !is_game_in_progress() || bots().isNotEmpty()
         if (can_join) {
             //Wrap the player in a trusted version of a player.  This makes sure that there is a local copy keeping track of points, pieces, etc.
-            val registrant = TrustedPlayer(this, registrant, 4, 5, 15)
+            val registrant = TrustedPlayer(registrant, 4, 5, 15)
             //if (initial_player.isInstanceOf<ProxyObject>){
             //	initial_player.json_connection.player = registrant
             //}
@@ -85,12 +88,11 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
         }
     }
 
-    /** This is called by the client to easily add bots */
+    /** This is called by the client to easily plus bots */
     fun add_bot(name: String, last_name: String = "") {
         if (!is_game_in_progress()) {
-            val bot: Bot = SinglePurchasePlayer(name, last_name, this, board)
+            val bot: Bot = SinglePurchasePlayer(name, last_name, this)
             bot.delay = 2
-            bot.pic = "http://jakrabbit.org/images/robot.jpg"
             register(bot)
         }
     }
@@ -108,7 +110,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
         } catch (err: TimeoutException) {
             val skipped = times_skipped.incrementAndGet(player.color)
             log.error("Player's Turn Timed-out. turn:$turn Time skipped:$skipped player:$player", err)
-            admin_msg(player.full_name() + " took too long.  A bot is filling in.")
+            /*admin_msg(player.full_name() + " took too long.  A bot is filling in.")*/
             if (skipped == 3L) {
                 kickOut(player, IllegalStateException("Your turn was skipped too many times"))
             } else {

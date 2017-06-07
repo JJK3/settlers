@@ -5,13 +5,11 @@ import player.*
 
 
 class TrustedPlayer(
-        admin: Admin,
         val original_player: Player,
         cities: Int = 4,
         settlements: Int = 5,
-        roads: Int = 15,
-        played_dev_cards: List<Card> = emptyList())
-    : Player(original_player.first_name, original_player.last_name, admin, cities, settlements, roads) {
+        roads: Int = 15)
+    : Player(original_player.first_name, original_player.last_name, cities, settlements, roads) {
 
     private var my_board: Board? = null
     override fun get_user_quotes(player_reference: PlayerReference, wantList: List<Resource>,
@@ -52,11 +50,6 @@ class TrustedPlayer(
         original_player.take_turn(turn, is_setup)
     }
 
-    override fun addPiecesLeft(pieceKlass: Class<out BoardPiece>, amount: Int) {
-        original_player.addPiecesLeft(pieceKlass, amount)
-        super.addPiecesLeft(pieceKlass, amount)
-    }
-
     override fun give_free_roads(num_roads: Int): Unit {
         original_player.give_free_roads(num_roads)
         super.give_free_roads(num_roads)
@@ -72,19 +65,9 @@ class TrustedPlayer(
         super.played_dev_card(card)
     }
 
-    override fun chat_msg(player: PlayerReference?, msg: String): Unit {
-        original_player.chat_msg(player, msg)
-        super.chat_msg(player, msg)
-    }
-
     override fun offer_quote(quote: Quote) {
         original_player.offer_quote(quote)
         super.offer_quote(quote)
-    }
-
-    override fun add_extra_victory_points(points: Int): Int {
-        original_player.add_extra_victory_points(points)
-        return super.add_extra_victory_points(points)
     }
 
     override fun player_moved_bandit(player_reference: PlayerReference, hex: Hex) {
@@ -107,19 +90,19 @@ class TrustedPlayer(
         super.update_board(b)
     }
 
-    override fun placed_road(player_reference: PlayerReference, edgeCoordinate: EdgeCoordinate) {
-        original_player.placed_road(player_reference, edgeCoordinate)
-        super.placed_road(player_reference, edgeCoordinate)
+    override fun placed_road(player: PlayerReference, edgeCoordinate: EdgeCoordinate) {
+        original_player.placed_road(player, edgeCoordinate)
+        super.placed_road(player, edgeCoordinate)
     }
 
-    override fun placed_settlement(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
-        original_player.placed_settlement(player_reference, nodeCoordinate)
-        super.placed_settlement(player_reference, nodeCoordinate)
+    override fun placed_settlement(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        original_player.placed_settlement(player, nodeCoordinate)
+        super.placed_settlement(player, nodeCoordinate)
     }
 
-    override fun placed_city(player_reference: PlayerReference, nodeCoordinate: NodeCoordinate) {
-        original_player.placed_city(player_reference, nodeCoordinate)
-        super.placed_city(player_reference, nodeCoordinate)
+    override fun placed_city(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        original_player.placed_city(player, nodeCoordinate)
+        super.placed_city(player, nodeCoordinate)
     }
 
     /*   override fun register_listener(listener: PlayerListener) {
