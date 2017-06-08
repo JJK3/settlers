@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 class RuleException(msg: String) : Exception(msg)
 
 /**
- * The central data structure for the Settlers game. The org.jjk3.board contains all info
+ * The central data structure for the Settlers game. The org.jjk3.board contains all ref
  * regarding tiles, cities, settlements, bandits, etc.
  */
 open class Board(val should_enforce_bandit: Boolean = true) {
@@ -56,17 +56,17 @@ open class Board(val should_enforce_bandit: Boolean = true) {
         return result
     }
 
-    /** Does the given org.jjk3.player have longest road. */
+    /** Does the given player have longest road. */
     fun hasLongestRoad(color: String): Boolean = longestRoadAuthority.hasLongestRoad(color)
 
     fun getLongestRoad(edge: Edge): List<Edge> = longestRoadAuthority.getLongestRoad(edge)
-    /** Port nodes controlled by the given org.jjk3.player. */
+    /** Port nodes controlled by the given player. */
     fun portNodes(color: String) = allNodes().filter { n -> n.hasPort() && n.city?.color == color }.toList()
 
-    /** Ports controlled by the given org.jjk3.player */
+    /** Ports controlled by the given player */
     fun getPorts(color: String): List<Port> = portNodes(color).map(Node::port).filterNotNull().toList()
 
-    /** Gets a list of cards, that the given org.jjk3.player should receive */
+    /** Gets a list of cards, that the given player should receive */
     fun getCards(number: Int, color: String): List<Resource> {
         val valid_hexes = tiles.values.filter { t ->
             t.number == number && !t.has_bandit && t.resource != null
@@ -133,28 +133,24 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     /**
-     * Gets a list of Nodes that settlements can be placed on.
-     * <roadConstraint> A boolean that ensures that settlements can only be placed
-     * on pre-existing roads. For SetupTurns, this should be false.
-     * (Players don't need to connect settlements to roads during setup. )
-     * <roadColor> The color of the road to constrain against.  For a normal turn,
-     * you need to ask which spots are valid for your org.jjk3.player's color.
-     * returns a list of Node objects
+     * Gets a list of Nodes that settlements can be placed on. Settlements can only be placed on pre-existing roads.
+     * <color> The Player's color
      */
-    fun getValidSettlementSpots(roadConstraint: Boolean, roadColor: String): List<Node> {
-        synchronized(this) {
-            return allNodes().filter { n ->
-                val is2AwayFromCities: Boolean = n.getAdjecentNodes().none(Node::hasCity)
-                if (roadConstraint) {
-                    val hasTouchingRoad = n.edges().find { e -> e.hasRoad() && e.road?.color == roadColor } != null
-                    hasTouchingRoad && is2AwayFromCities && !n.hasCity()
-                } else {
-                    is2AwayFromCities && !n.hasCity()
-                }
-            }.toSet().toList()
-        }
-    }
+    fun getValidSettlementSpots(color: String): List<Node> =
+            synchronized(this) {
+                allNodes().filter { n -> hasTouchingRoad(n, color) && is2AwayFromCity(n) && !n.hasCity() }
+            }
 
+    /**
+     * Gets a list of Nodes that settlements can be placed on regardless of existing cities or settlements.
+     */
+    fun getValidSettlementSpots(): List<Node> =
+            synchronized(this) {
+                allNodes().filter { is2AwayFromCity(it) && !it.hasCity() }
+            }
+
+    private fun hasTouchingRoad(n: Node, roadColor: String) = n.edges().find { it.road?.color == roadColor } != null
+    private fun is2AwayFromCity(n: Node) = n.getAdjecentNodes().none(Node::hasCity)
     /**
      * Get all the valid places to put a road.
      * NOTE: if someone else builds a settlement, you can't build a road through it.

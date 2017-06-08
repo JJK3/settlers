@@ -366,25 +366,25 @@ class BoardTest {
 
     @Test fun testGetValidSettlementSpots() {
         var board = StandardBoard()
-        var i = board.getValidSettlementSpots(true, "red").size
+        var i = board.getValidSettlementSpots("red").size
         assertEquals(i, 0)
         board.placeRoad(Road("red"), EdgeCoordinate(0, 0, 0))
-        i = board.getValidSettlementSpots(true, "red").size
+        i = board.getValidSettlementSpots("red").size
         assertEquals(i, 2)
 
         board.placeRoad(Road("red"), EdgeCoordinate(0, 0, 1))
-        i = board.getValidSettlementSpots(true, "red").size
+        i = board.getValidSettlementSpots("red").size
         assertEquals(i, 3)
 
         board.placeRoad(Road("red"), EdgeCoordinate(0, 0, 2))
         board.placeRoad(Road("red"), EdgeCoordinate(1, 0, 0))
-        i = board.getValidSettlementSpots(true, "red").size
+        i = board.getValidSettlementSpots("red").size
         assertEquals(i, 5)
-        i = board.getValidSettlementSpots(true, "blue").size
+        i = board.getValidSettlementSpots("blue").size
         assertEquals(i, 0)
 
         board.placeCity(Settlement("red"), NodeCoordinate(0, 0, 0))
-        i = board.getValidSettlementSpots(true, "red").size
+        i = board.getValidSettlementSpots("red").size
         assertEquals(i, 2)
     }
 

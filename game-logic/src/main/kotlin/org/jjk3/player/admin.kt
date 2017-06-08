@@ -1,8 +1,8 @@
 package org.jjk3.player
 
 import com.google.common.util.concurrent.AtomicLongMap
-import org.jjk3.core.*
 import org.apache.log4j.Logger
+import org.jjk3.core.*
 import java.util.*
 import java.util.concurrent.Future
 
@@ -37,25 +37,74 @@ abstract class UsesGameState {
             }
         }
 
-    fun is_game_done(): Boolean = state.is_terminal_state
-    fun is_game_waiting(): Boolean = state == GameState.Waiting
-    fun is_game_in_progress(): Boolean = state == GameState.Running
+    fun isGameDone(): Boolean = state.is_terminal_state
+    fun isGameWaiting(): Boolean = state == GameState.Waiting
+    fun isGameInProgress(): Boolean = state == GameState.Running
     /** Assert a state */
-    fun assert_state(expected_state: GameState, msg: String = "") {
-        if (state != expected_state)
-            throw  IllegalStateException("Assertion Error: Expected turn state:$expected_state Found:$state. $msg")
+    fun assertState(expectedState: GameState, msg: String = "") {
+        if (state != expectedState)
+            throw  IllegalStateException("Assertion Error: Expected turn state:$expectedState Found:$state. $msg")
     }
 
-    /** Assert a state */
-    fun assert_state(expected_states: List<GameState>, msg: String) {
-        if (expected_states.contains(state))
-            throw  IllegalStateException("Assertion Error: Expected turn state:$expected_states Found:$state. $msg")
-    }
-
-    fun assert_not_state(not_expected_state: GameState, msg: String = "") {
-        if (state == not_expected_state)
+    fun assert_not_state(notExpectedState: GameState, msg: String = "") {
+        if (state == notExpectedState) {
             throw  IllegalStateException(
-                    "Assertion Error: Turn state was expected to not be :$not_expected_state Found:$state. $msg")
+                    "Assertion Error: Turn state was expected to not be :$notExpectedState Found:$state. $msg")
+        }
+    }
+}
+
+class LoggingObserver() : GameObserver {
+    val log = Logger.getLogger(LoggingObserver::class.java)
+    override fun playerReceivedCards(player: PlayerReference, cards: List<Card>) {
+    }
+
+    override fun playerRolled(player: PlayerReference, roll: Pair<Int, Int>) {
+        log.info("$player rolled $roll")
+    }
+
+    override fun playerStoleCard(theif: PlayerReference, victim: PlayerReference, num_cards: Int) {
+        log.info("$theif stole $num_cards card(s) from $victim")
+    }
+
+    override fun gameStart(maxScore: Int) {
+        log.info("Game is starting.  Maximum points: $maxScore")
+    }
+
+    override fun gameEnd(winner: PlayerReference, points: Int) {
+        log.info("Game is finished.  $winner won with $points points!")
+    }
+
+    override fun playerJoined(player: PlayerReference) {
+        log.info("$player joined the game")
+    }
+
+    override fun getTurn(player: PlayerReference, turnClass: Class<Turn>) {
+        log.debug("$player is starting their turn")
+    }
+
+    override fun playerMovedBandit(player: PlayerReference, hex: Hex) {
+        log.info("$player moved the bandit to $hex")
+    }
+
+    override fun placedRoad(player: PlayerReference, edgeCoordinate: EdgeCoordinate) {
+        log.info("$player placed a road at ${edgeCoordinate}")
+    }
+
+    override fun placedSettlement(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        log.info("$player placed a settlement an $nodeCoordinate")
+    }
+
+    override fun placedCity(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        log.info("$player placed a city an $nodeCoordinate")
+    }
+
+    override fun playerHasLongestRoad(player: PlayerReference) {
+        log.info("$player has longest road")
+    }
+
+    override fun playerHasLargestArmy(player: PlayerReference) {
+        log.info("$player has largest army")
     }
 }
 
@@ -90,7 +139,8 @@ open class Admin(
     var kicked_out: List<Player> = emptyList()
     var dice_handler: DiceHandler = StandardDiceHandler(this)
     var game_future: Future<Map<PlayerReference, Int>>? = null
-    var all_futures: List<Future<Any?>> = emptyList() /*Keep track of all futures used in this admin. */
+    /** All futures used in this admin. */
+    var all_futures: List<Future<Any?>> = emptyList()
 
     /** Returns a list of the two dice rolls */
     fun rollDice(): Pair<Int, Int> {
@@ -116,11 +166,11 @@ open class Admin(
 
     /** Make the dice roll a specific value */
     fun roll_set_dice(roll: Pair<Int, Int>): Pair<Int, Int> {
-        if (currentTurn() == null) throw  Exception("rollDice called ,out a currentTurn")
+        if (currentTurn() == null) throw  Exception("rollDice called without a currentTurn")
         val acting_player = currentTurn()!!.player
         log.debug("$acting_player rolled " + roll)
         val sum = roll.first + roll.second
-        send_observer_msg { it.player_rolled(acting_player.info(), roll) }
+        send_observer_msg { it.playerRolled(acting_player.ref(), roll) }
         if (sum == 7) {
             dice_handler.handle_roll_7(roll)
         } else {
@@ -129,7 +179,7 @@ open class Admin(
                 val cards: List<Card> = board.getCards(sum, player.color).map { ResourceCard(it) }
                 if (cards.isNotEmpty()) {
                     player.add_cards(cards)
-                    send_observer_msg { it.player_received_cards(player.info(), cards) }
+                    send_observer_msg { it.playerReceivedCards(player.ref(), cards) }
                 }
             }
         }
@@ -137,15 +187,15 @@ open class Admin(
         return roll
     }
 
-    /** Get a org.jjk3.player based on a color.  Returns null if not found. */
+    /** Get a player based on a color.  Returns null if not found. */
     fun getPlayer(color: String): Player? = players.find { it.color == color }
 
-    /** Register a org.jjk3.player or players , this game. */
+    /** Register a player or players with this game. */
     open fun register(registrant: Player): Unit {
-        if (!is_game_in_progress()) {
+        if (!isGameInProgress()) {
             registrant.board = board
             val preferred_color = registrant.preferred_color
-            if (is_game_waiting()) {
+            if (isGameWaiting()) {
                 if (preferred_color != null && available_colors.contains(preferred_color)) {
                     registrant.color = preferred_color
                     available_colors -= preferred_color
@@ -158,13 +208,12 @@ open class Admin(
             registrant.update_board(board)
             registerObserver(registrant)
             players += registrant
-            send_observer_msg { it.player_joined(registrant.info()) }
-            log.info("Player joined: " + registrant)
+            send_observer_msg { it.playerJoined(registrant.ref()) }
             if (players.size == max_players) {
-                play_game()
+                playGame()
             }
         } else {
-            log.info("Player cannot join the game at this time")
+            throw IllegalStateException("Player cannot join the game at this time")
         }
     }
 
@@ -178,7 +227,7 @@ open class Admin(
         players.forEach { player ->
             val color = player.color
             val piecesForSale = board.getPiecesForSale(color)
-            val settlementSpots = board.getValidSettlementSpots(true, color)
+            val settlementSpots = board.getValidSettlementSpots(color)
             if (Math.min(settlementSpots.size, piecesForSale.settlements.size()) > 0) {
                 return false
             }
@@ -196,7 +245,7 @@ open class Admin(
         return true
     }
 
-    /** Get the score of the given org.jjk3.player */
+    /** Get the score of the given player */
     fun getScore(player: Player): Int {
         var score = 0
         getPlayer(player.color)?.let { p ->
@@ -217,27 +266,27 @@ open class Admin(
         return score + player.get_extra_victory_points()
     }
 
-    fun getScores() = players.map { p: Player -> Pair(p.info(), getScore(p)) }.toMap()
+    fun getScores() = players.map { p: Player -> Pair(p.ref(), getScore(p)) }.toMap()
     fun countResourceCards(playerReference: PlayerReference): Int {
         val player: Player = getPlayer(playerReference.color) ?: throw  IllegalArgumentException(
-                "Could not find org.jjk3.player , color:${playerReference.color} in $players")
+                "Could not find player , color:${playerReference.color} in $players")
         return Resource.values().map { player.countResources(it) }.sum()
     }
 
-    fun count_all_resource_cards() = players.map { p -> listOf(p.info(), countResourceCards(p.info())) }
-    fun count_dev_cards(playerReference: PlayerReference) = getPlayer(playerReference.color)?.count_dev_cards()
-    /** Finds the org.jjk3.player , the largest army, or nil if no one has it. */
+    fun countAllResourceCards() = players.map { p -> listOf(p.ref(), countResourceCards(p.ref())) }
+    fun countDevelopmentCards(playerReference: PlayerReference) = getPlayer(playerReference.color)?.count_dev_cards()
+    /** Finds the player , the largest army, or nil if no one has it. */
     fun who_has_largest_army(): PlayerReference? {
         //The largest randomNumber of soldier cards
         val highest_count = players.map { countSoliders(it) }.max() ?: 0
         val who_has_the_most = players.filter { countSoliders(it) == highest_count }
         var result: PlayerReference? = null
         if (who_has_the_most.size == 1 && highest_count >= 3) {
-            result = who_has_the_most.first().info()
+            result = who_has_the_most.first().ref()
         }
         result?.let { p ->
             if (p != previous_player_with_largest_army) {
-                send_observer_msg { it.player_has_largest_army(p) }
+                send_observer_msg { it.playerHasLargestArmy(p) }
                 previous_player_with_largest_army = p
             }
         }
@@ -245,12 +294,11 @@ open class Admin(
     }
 
     fun countSoliders(player: Player): Int = player.get_played_dev_cards().count { it is SoldierCard }
-
     /** Check to see if someone one.  If so, end the game */
     fun checkForWinner(): Boolean {
         checkForLongestRoad()
         getWinner()?.let { winner ->
-            send_observer_msg { it.game_end(winner.info(), getScore(winner)) }
+            send_observer_msg { it.gameEnd(winner.ref(), getScore(winner)) }
             state = GameState.Finished
             return true
         }
@@ -259,63 +307,62 @@ open class Admin(
 
     /**
      * Does this game have a winner yet.
-     * If so, return the org.jjk3.player that one, nil otherwise.
+     * If so, return the player that one, nil otherwise.
      */
     fun getWinner(): Player? = players.find { getScore(it) >= max_points }
 
     /**
      * An iterator for all other players
-     * [player] the org.jjk3.player to exclude
+     * [player] the player to exclude
      */
-    fun other_players(player: PlayerReference): List<Player> = players.filter { it.color != player.color }
+    fun otherPlayers(player: PlayerReference): List<Player> = players.filter { it.color != player.color }
 
     /** Get information on who is winning, who has longest road and who has largest army */
-    fun get_player_stats(): Map<String, Any?> {
+    fun getPlayerStats(): Map<String, Any?> {
         val leading_score = players.map { getScore(it) }.max()
-        val leaders = players.filter { getScore(it) == leading_score }.map(Player::info)
+        val leaders = players.filter { getScore(it) == leading_score }.map(Player::ref)
         val la = who_has_largest_army()
         return mapOf(Pair("leaders", leaders),
                 Pair("largest_army", la),
-                Pair("longest_road", who_has_longest_road()))
+                Pair("longest_road", whoHasLongestRoad()))
     }
 
-    /** returns the org.jjk3.player infos that have the longest road */
-    fun who_has_longest_road(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color) }?.info()
+    /** returns the player infos that have the longest road */
+    fun whoHasLongestRoad(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color) }?.ref()
 
     private fun checkForLongestRoad() {
-        who_has_longest_road()?.let { p ->
+        whoHasLongestRoad()?.let { p ->
             if (p != previous_player_with_longest_road) {
-                send_observer_msg { it.player_has_longest_road(p) }
+                send_observer_msg { it.playerHasLongestRoad(p) }
                 previous_player_with_longest_road = p
             }
         }
     }
 
-    fun offer_quote(quote: Quote, player_reference: PlayerReference) {
+    fun offerQuote(quote: Quote, player_reference: PlayerReference) {
         if (quote.bidder != player_reference) {
             throw IllegalStateException()
         }
-        currentTurn()?.received_quote(quote)
+        currentTurn()?.receivedQuote(quote)
         currentTurn()?.player?.offer_quote(quote)
     }
 
     /*
     * Gets a List of quotes from the bank and other users
     * Optionally takes a block that iterates through each quote as they come
-    * [org.jjk3.player] The org.jjk3.player asking for quotes
+    * [player] The player asking for quotes
     */
-    fun get_quotes(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
-        //var result = ThreadSafeList.(get_quotes_from_bank(org.jjk3.player, wantList, giveList))
-        var result = get_quotes_from_bank(player, wantList, giveList)
+    fun getQuotes(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
+        //var result = ThreadSafeList.(getQuotesFromBank(player, wantList, giveList))
+        var result = getQuotesFromBank(player, wantList, giveList)
 
         //Add user quotes
-        other_players(player.info()).forEach { p: Player ->
-            val userQuotes = p.get_user_quotes(p.info(), wantList, giveList)
+        otherPlayers(player.ref()).forEach { p: Player ->
+            val userQuotes = p.get_user_quotes(p.ref(), wantList, giveList)
             userQuotes.forEach { quote: Quote ->
                 try {
-                    if (quote.bidder != p.info()) {
-                        throw  RuleException(
-                                "Player is offering a quote where the bidder is not himself. Player:" + p)
+                    if (quote.bidder != p.ref()) {
+                        throw RuleException("Player is offering a quote where the bidder is not himself. Player:$p")
                     }
                     quote.validate(this)
                     result += quote
@@ -327,8 +374,8 @@ open class Admin(
         return result
     }
 
-    /** Returns a List of Quote objects from the bank for a specific org.jjk3.player */
-    fun get_quotes_from_bank(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
+    /** Returns a List of Quote objects from the bank for a specific player */
+    fun getQuotesFromBank(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
         //start , the bank's 4:1 offer
         var result: List<Quote> = emptyList()
 
@@ -352,24 +399,24 @@ open class Admin(
         return result.filterNot { q -> result.any { it.isBetterQuote(q) } }
     }
 
-    fun giveSetupTurn(player: Player): Turn = give_turn(SetupTurn(this, player, board), player)
-    fun giveNormalTurn(player: Player): Turn = give_turn(Turn(this, player, board), player)
+    fun giveSetupTurn(player: Player): Turn = giveTurn(SetupTurn(this, player, board), player)
+    fun giveNormalTurn(player: Player): Turn = giveTurn(Turn(this, player, board), player)
     /**
-     * A helper method to give a turn to a org.jjk3.player.
+     * A helper method to give a turn to a player.
      * This method returns when the turn is finished.  It shouldn't throw any errors.
      * Any errors that occur during the turn should be handled here.
      */
-    open fun give_turn(turn: Turn, player: Player): Turn {
-        if (!is_game_done()) { //We need to check for the winner before we give the next org.jjk3.player a turn
+    open fun giveTurn(turn: Turn, player: Player): Turn {
+        if (!isGameDone()) { //We need to check for the winner before we give the next player a turn
             log.debug("**Giving $turn to $player")
             current_turn_obj = turn
 
             try {
-                //send_observer_msg { it.get_turn(org.jjk3.player.info, turn.getClass) }
-                //Give the turn to the org.jjk3.player
+                //send_observer_msg { it.getTurn(player.ref, turn.getClass) }
+                //Give the turn to the player
                 turn.state = TurnState.Active
-                log.debug("org.jjk3.player is taking turn: " + player)
-                player.take_turn(turn, turn.is_setup)
+                observers.forEach { it.getTurn(player.ref(), turn.javaClass) }
+                player.take_turn(turn)
                 if (!turn.isDone()) {
                     log.warn("Turn SHOULD BE DONE.  it's:${turn.state}    $player   $turn")
                 }
@@ -381,8 +428,7 @@ open class Admin(
                 log.error("Error. CurrentTurnState=" + currentTurn()?.state + " : " + e, e)
                 throw e
             }
-            turn.rule_error?.let { throw it }
-            log.debug("**give_turn() finished")
+            log.debug("**giveTurn() finished")
         }
         return turn
     }
@@ -391,28 +437,26 @@ open class Admin(
      * Starts the game thread , the registered players.
      * Note: This method returns immediately.
      */
-    fun play_game(): Map<PlayerReference, Int> {
+    fun playGame(): Map<PlayerReference, Int> {
         if (players.size <= 1) {
             throw IllegalStateException("2 or more players are required to start a game")
         }
-        if (is_game_in_progress() || is_game_done()) {
+        if (isGameInProgress() || isGameDone()) {
             throw IllegalStateException("Game is already in progress")
         }
         this.state = GameState.Running
         try {
-            log.info("Starting Game with ${players.size} players")
-            log.info(" max score:$max_points")
-            send_observer_msg { it.game_start() }
+            send_observer_msg { it.gameStart(max_points) }
 
             var roundCount = 0
             for (p in players + players.reversed()) {
-                giveSetupTurn(p).force_done()
+                giveSetupTurn(p).forceDone()
             }
-            while (!is_game_done()) {
+            while (!isGameDone()) {
                 roundCount += 1
                 for (p in players) {
                     if (!checkForWinner()) {
-                        giveNormalTurn(p).force_done()
+                        giveNormalTurn(p).forceDone()
                     }
                 }
                 log.info("Round $roundCount finished.  Highest Score:" + players.map { p ->
@@ -422,11 +466,10 @@ open class Admin(
                     log.error("Too many rounds have occurred: $roundCount. Effective Stalemate")
                     state = GameState.Stalemate
                 }
-                if (!is_game_done()) {
+                if (!isGameDone()) {
                     checkForStalemate()
                 }
             }
-            log.warn("game is done " + state)
         } catch (e: Exception) {
             log.error("Game Ending Exception: " + e, e)
         }
@@ -437,24 +480,24 @@ open class Admin(
 
 /*    include UsesGameState
 
-    //An error occured on this org.jjk3.player's turn.  KICK 'EM OUT! and replace them , a bot.
-    fun kickOut(org.jjk3.player, reason_or_error)={
-      //org.jjk3.player should always be a trusted org.jjk3.player
-      raise AdminError.("Server error.  kickOut was not called , a trusted org.jjk3.player object") unless org.jjk3.player.is_a?(TrustedPlayer)
+    //An error occured on this player's turn.  KICK 'EM OUT! and replace them , a bot.
+    fun kickOut(player, reason_or_error)={
+      //player should always be a trusted player
+      raise AdminError.("Server error.  kickOut was not called , a trusted player object") unless player.is_a?(TrustedPlayer)
       if (reason_or_error.is_a?(Exception))
-        log.error("REPLACING PLAYER WITH BOT: //{org.jjk3.player}. //{reason_or_error}")
+        log.error("REPLACING PLAYER WITH BOT: //{player}. //{reason_or_error}")
         log.error("//{reason_or_error}\n     //{reason_or_error.backtrace.join("\n     ")}")
       else
-        log.error("REPLACING PLAYER WITH BOT: //{org.jjk3.player}. //{reason_or_error}")
+        log.error("REPLACING PLAYER WITH BOT: //{player}. //{reason_or_error}")
       }
-      kicked_out << org.jjk3.player
-      bot_player = SinglePurchasePlayer.copy(org.jjk3.player, "Robo", "", self)
-      trusted_bot = TrustedPlayer.(self, bot_player, log, org.jjk3.player.color, org.jjk3.player.piecesLeft(City), org.jjk3.player.piecesLeft(Settlement), org.jjk3.player.piecesLeft(Road), org.jjk3.player.cards, org.jjk3.player.get_played_dev_cards)
+      kicked_out << player
+      bot_player = SinglePurchasePlayer.copy(player, "Robo", "", self)
+      trusted_bot = TrustedPlayer.(self, bot_player, log, player.color, player.piecesLeft(City), player.piecesLeft(Settlement), player.piecesLeft(Road), player.cards, player.get_played_dev_cards)
 
-      replace_player(org.jjk3.player, trusted_bot)
+      replace_player(player, trusted_bot)
       begin
         timeout(2) do
-          org.jjk3.player.chat_msg(nil, "Error Occured: Now you've been kicked out")
+          player.chat_msg(nil, "Error Occured: Now you've been kicked out")
         }       rescue -> err
         puts $!
       }     }
@@ -462,22 +505,22 @@ open class Admin(
 
 
     fun replace_player(old_player, _player)={
-      log.warn("Replacing org.jjk3.player old://{old_player} ://{_player}")
-      log.debug("Current Turn Player: //{currentTurn().org.jjk3.player}.  Old Player: //{old_player}")
-      //at this point, the  org.jjk3.player should already have all of the old's cards
+      log.warn("Replacing player old://{old_player} ://{_player}")
+      log.debug("Current Turn Player: //{currentTurn().player}.  Old Player: //{old_player}")
+      //at this point, the  player should already have all of the old's cards
 
-      other_players(old_player) do |p|
-        p.player_replaced_by(old_player.info, _player.info)
+      otherPlayers(old_player) do |p|
+        p.player_replaced_by(old_player.ref, _player.ref)
       }
       players[players.index(old_player)] = _player
       observers[observers.index(old_player)] = _player if observers.include?(old_player)
       currentTurn().rule_error = nil
 
-      //if it was the old org.jjk3.player's turn
-      if (currentTurn().org.jjk3.player == old_player)
-        currentTurn().org.jjk3.player = _player
+      //if it was the old player's turn
+      if (currentTurn().player == old_player)
+        currentTurn().player = _player
         log.warn("**Giving Turn to REPLACEMENT PLAYER: //{_player}")
-        give_turn(currentTurn, _player, false)
+        giveTurn(currentTurn, _player, false)
       }     }
 
 
@@ -516,7 +559,7 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
     }
 
     override fun handle_roll_7(roll: Pair<Int, Int>) {
-        //Each org.jjk3.player must first get rid of half their cards if they more than 7
+        //Each player must first get rid of half their cards if they more than 7
         admin.players.forEach { p ->
             try {
                 if (p.count_resources() > 7) {
@@ -527,7 +570,7 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
                     if (chosen_cards.size != how_many_cards_to_lose)
                         throw  RuleException(
                                 "You did not select the right randomNumber of cards. expected:" + how_many_cards_to_lose + " found:" + chosen_cards.size)
-                    p.del_cards(chosen_cards.map(::ResourceCard), 4)
+                    p.takeCards(chosen_cards.map(::ResourceCard), 4)
                 }
             } catch (re: RuleException) {
                 log.error("REPLACING PLAYER WITH BOT: " + p, re)
@@ -540,7 +583,7 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
         admin.board.tiles.values.find { it.has_bandit }?.let { current_bandit_hex ->
             val _hex = admin.currentTurn()!!.player.move_bandit(current_bandit_hex)
             admin.board.getHex(_hex.coords).let { local_hex ->
-                admin.currentTurn()!!.move_bandit(local_hex)
+                admin.currentTurn()!!.moveBandit(local_hex)
             }
         }
     }

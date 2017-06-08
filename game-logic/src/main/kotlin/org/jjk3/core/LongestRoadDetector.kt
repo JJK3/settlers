@@ -6,7 +6,7 @@ class LongestRoadDetector(val board: Board) {
         fun plus(edge: Edge) = LongestRoadResult(longestRoad + edge, examinedEdges + edge)
     }
 
-    /** Does the given org.jjk3.player have longest road. */
+    /** Does the given player have longest road. */
     fun hasLongestRoad(color: String): Boolean {
         val allLongestRoads = getLongestRoads()
         val maxes = getMaxes(allLongestRoads) { it.longestRoad.size }

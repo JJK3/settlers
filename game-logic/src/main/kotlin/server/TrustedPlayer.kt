@@ -41,13 +41,13 @@ class TrustedPlayer(
         super.add_cards(cards_to_add)
     }
 
-    override fun del_cards(cards_to_add: List<Card>, i: Int) {
-        original_player.del_cards(cards_to_add, i)
-        super.del_cards(cards_to_add, i)
+    override fun takeCards(cards_to_add: List<Card>, i: Int) {
+        original_player.takeCards(cards_to_add, i)
+        super.takeCards(cards_to_add, i)
     }
 
-    override fun take_turn(turn: Turn, is_setup: Boolean) {
-        original_player.take_turn(turn, is_setup)
+    override fun take_turn(turn: Turn) {
+        original_player.take_turn(turn)
     }
 
     override fun give_free_roads(num_roads: Int): Unit {
@@ -70,19 +70,19 @@ class TrustedPlayer(
         super.offer_quote(quote)
     }
 
-    override fun player_moved_bandit(player_reference: PlayerReference, hex: Hex) {
-        original_player.player_moved_bandit(player_reference, hex)
-        super.player_moved_bandit(player_reference, hex)
+    override fun playerMovedBandit(player_reference: PlayerReference, hex: Hex) {
+        original_player.playerMovedBandit(player_reference, hex)
+        super.playerMovedBandit(player_reference, hex)
     }
 
-    override fun game_start() {
-        original_player.game_start()
-        super.game_start()
+    override fun gameStart(maxScore: Int) {
+        original_player.gameStart(maxScore)
+        super.gameStart(maxScore)
     }
 
-    override fun game_end(winner: PlayerReference, points: Int) {
-        original_player.game_end(winner, points)
-        super.game_end(winner, points)
+    override fun gameEnd(winner: PlayerReference, points: Int) {
+        original_player.gameEnd(winner, points)
+        super.gameEnd(winner, points)
     }
 
     override fun update_board(b: Board) {
@@ -90,24 +90,24 @@ class TrustedPlayer(
         super.update_board(b)
     }
 
-    override fun placed_road(player: PlayerReference, edgeCoordinate: EdgeCoordinate) {
-        original_player.placed_road(player, edgeCoordinate)
-        super.placed_road(player, edgeCoordinate)
+    override fun placedRoad(player: PlayerReference, edgeCoordinate: EdgeCoordinate) {
+        original_player.placedRoad(player, edgeCoordinate)
+        super.placedRoad(player, edgeCoordinate)
     }
 
-    override fun placed_settlement(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
-        original_player.placed_settlement(player, nodeCoordinate)
-        super.placed_settlement(player, nodeCoordinate)
+    override fun placedSettlement(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        original_player.placedSettlement(player, nodeCoordinate)
+        super.placedSettlement(player, nodeCoordinate)
     }
 
-    override fun placed_city(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
-        original_player.placed_city(player, nodeCoordinate)
-        super.placed_city(player, nodeCoordinate)
+    override fun placedCity(player: PlayerReference, nodeCoordinate: NodeCoordinate) {
+        original_player.placedCity(player, nodeCoordinate)
+        super.placedCity(player, nodeCoordinate)
     }
 
-    /*   override fun register_listener(listener: PlayerListener) {
+    /*   override fun registerListener(listener: PlayerListener) {
     }*/
 
-    //TODO: need to go through ALL org.jjk3.player methods
+    //TODO: need to go through ALL player methods
 
 }

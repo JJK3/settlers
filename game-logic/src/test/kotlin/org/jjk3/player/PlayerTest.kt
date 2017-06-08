@@ -13,7 +13,7 @@ class PlayerTest {
         val player = MockPlayer("1")
         player.add_cards(listOf(Resource.Brick, Resource.Brick, Resource.Sheep).map { ResourceCard(it) })
         assertEquals(player.get_cards(), listOf(Resource.Brick, Resource.Brick, Resource.Sheep).map(::ResourceCard))
-        player.del_cards(listOf(Resource.Brick, Resource.Sheep).map(::ResourceCard), 1)
+        player.takeCards(listOf(Resource.Brick, Resource.Sheep).map(::ResourceCard), 1)
         assertEquals(player.get_cards(), listOf(ResourceCard(Resource.Brick)))
     }
 

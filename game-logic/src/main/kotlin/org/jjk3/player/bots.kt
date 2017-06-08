@@ -15,7 +15,7 @@ abstract class Bot(first_name: String,
 }
 
 interface SetupTurnStrategy {
-    fun do_setup_turn(turn: SetupTurn)
+    fun handleSetupTurn(turn: SetupTurn)
 }
 
 interface MoveBanditStrategy {
@@ -24,15 +24,15 @@ interface MoveBanditStrategy {
 }
 
 class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
-    override fun do_setup_turn(turn: SetupTurn) {
-        val spots = player.board!!.getValidSettlementSpots(false, player.color)
+    override fun handleSetupTurn(turn: SetupTurn) {
+        val spots = player.board!!.getValidSettlementSpots()
         if (spots.isEmpty())
             throw  IllegalStateException("Could not find any settlement spots")
         //spots.sort!{|a,b| a.getProbability <=> b.getProbability}
         val spot = spots.first()
-        val has_placed_settlement = turn.placed_settlement != null
+        val has_placed_settlement = turn.placedSettlement != null
 
-        val node = turn.placed_settlement ?: turn.place_settlement(spot.coords())
+        val node = turn.placedSettlement ?: turn.placeSettlement(spot.coords())
 
         /**
          * Wait for the settlement to actually be placed.
@@ -49,7 +49,7 @@ class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
             throw IllegalStateException("Node (${node.coords()}) Should have a Settlement, but it doesn't")
         }
         val road_spots = player.board!!.getValidRoadSpots(player.color, settlementNode)
-        road_spots.firstOrNull()!!.let { turn.place_road(it.coords()) }
+        road_spots.firstOrNull()!!.let { turn.placeRoad(it.coords()) }
         turn.done()
     }
 }
@@ -60,7 +60,7 @@ class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
  */
 class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
     /**
-     * #Tell this org.jjk3.player to move the bandit
+     * #Tell this player to move the bandit
      * [old_hex] the hex where the bandit currently sits
      * return a  hex
      */
@@ -84,14 +84,14 @@ class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
         return player.board!!.tiles.values.find { !it.has_bandit }!!
     }
 
-    /** Ask the org.jjk3.player to choose a org.jjk3.player among the given list */
+    /** Ask the player to choose a player among the given list */
     override fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference {
         return players.find { it.color != player.color } ?:
                 throw  IllegalStateException("I'm being forced to select myself")
     }
 }
 
-/** An AI org.jjk3.player that just chooses moves at random */
+/** An AI player that just chooses moves at random */
 class RandomPlayer(first_name: String,
                    last_name: String,
                    admin: Admin,
@@ -106,73 +106,72 @@ class RandomPlayer(first_name: String,
             players, reason)
 
     val setupTurnStrategy = HighestProbablitySetup(this)
-    fun do_setup_turn(turn: SetupTurn) = setupTurnStrategy.do_setup_turn(turn)
-    override fun take_turn(turn: Turn, is_setup: Boolean) {
-        //   super.take_turn(turn, is_setup)
+    override fun take_turn(turn: Turn) {
         try {
-            //  if (delay > 0) Thread.sleep(delay)
-            if (is_setup) {
-                do_setup_turn(turn as SetupTurn)
-            } else {
-                if (!turn.has_rolled()) {
-                    turn.roll_dice()
-                }
-                val piecesForSale = board!!.getPiecesForSale(color)
-                val city = City(color)
-                if (can_afford(listOf(city)) && piecesForSale.cities.size()> 0) {
-                    var spots = board!!.getValidCitySpots(color)
-                    if (spots.isNotEmpty()) {
-                        spots = spots.sortedBy { Dice.getProbability(it) }
-                        turn.place_city(spots.last().coords())
-                        //turn.taint
-                        /*if (chatter)
-                            admin.chat_msg(this, "We built this city...on wheat && ore...")*/
-                        log.info("<BOT: " + full_name() + ": Bought City> ")
-                    }
-                }
+            when (turn) {
+                is SetupTurn -> setupTurnStrategy.handleSetupTurn(turn)
+                else -> handleNormalTurn(turn)
+            }
+        } finally {
+            update_board(board!!)
+            turn.forceDone()
+        }
+    }
 
-                if (!admin.is_game_done() && can_afford(listOf(Settlement(color))) && piecesForSale.settlements.size() > 0) {
-                    val spots = board!!.getValidSettlementSpots(true, color)
-                    if (spots.isNotEmpty()) {
-                        //spots.sort!{|a,b| a.getProbability <=> b.getProbability}
-                        turn.place_settlement(spots.last().coords())
-                        //turn.taint
-                        log.info("<BOT: " + full_name() + ": Bought Settlement> ")
-                    }
-                }
+    fun handleNormalTurn(turn: Turn) {
+        if (!turn.hasRolled()) {
+            turn.rollDice()
+        }
+        val piecesForSale = board!!.getPiecesForSale(color)
+        val city = City(color)
+        if (can_afford(listOf(city)) && piecesForSale.cities.size() > 0) {
+            var spots = board!!.getValidCitySpots(color)
+            if (spots.isNotEmpty()) {
+                spots = spots.sortedBy { Dice.getProbability(it) }
+                turn.placeCity(spots.last().coords())
+                //turn.taint
+                /*if (chatter)
+                    admin.chat_msg(this, "We built this city...on wheat && ore...")*/
+                log.info("<BOT: " + full_name() + ": Bought City> ")
+            }
+        }
 
-                if (!admin.is_game_done() && can_afford(listOf(Road(color))) && piecesForSale.roads.size() > 0) {
-                    val spots = board!!.getValidRoadSpots(color)
-                    val longest_road = board!!.hasLongestRoad(color)
-                    if (board!!.getValidSettlementSpots(true, color).size < 4) {
-                        if (spots.isNotEmpty()) {
-                            turn.place_road(spots.first().coords())
-                        }
-                        //turn.taint
-                        if (!longest_road && board!!.hasLongestRoad(color)) {
-                            log.info("<BOT " + full_name() + ": Got longest road> ")
-                        }
-                    }
+        if (!admin.isGameDone() && can_afford(listOf(Settlement(color))) && piecesForSale.settlements.size() > 0) {
+            val spots = board!!.getValidSettlementSpots(color)
+            if (spots.isNotEmpty()) {
+                //spots.sort!{|a,b| a.getProbability <=> b.getProbability}
+                turn.placeSettlement(spots.last().coords())
+                //turn.taint
+                log.info("<BOT: " + full_name() + ": Bought Settlement> ")
+            }
+        }
+
+        if (!admin.isGameDone() && can_afford(listOf(Road(color))) && piecesForSale.roads.size() > 0) {
+            val spots = board!!.getValidRoadSpots(color)
+            val longest_road = board!!.hasLongestRoad(color)
+            if (board!!.getValidSettlementSpots(color).size < 4) {
+                if (spots.isNotEmpty()) {
+                    turn.placeRoad(spots.first().coords())
                 }
-                if (!admin.is_game_done()) {
-                    Resource.values().forEach { r ->
-                        if (countResources(r) < 3) {
-                            val giveCards = resource_cards().distinct().filter { countResources(it.resource) > 3 }
-                            if (!giveCards.isEmpty()) {
-                                val qs = turn.get_quotes(listOf(r), giveCards.map { it.resource })
-                                if (qs.isNotEmpty()) {
-                                    val q = qs.sortedBy { it.receiveNum }.first()
-                                    turn.accept_quote(q)
-                                }
-                            }
+                //turn.taint
+                if (!longest_road && board!!.hasLongestRoad(color)) {
+                    log.info("<BOT " + full_name() + ": Got longest road> ")
+                }
+            }
+        }
+        if (!admin.isGameDone()) {
+            Resource.values().forEach { r ->
+                if (countResources(r) < 3) {
+                    val giveCards = resource_cards().distinct().filter { countResources(it.resource) > 3 }
+                    if (!giveCards.isEmpty()) {
+                        val qs = turn.getQuotes(listOf(r), giveCards.map { it.resource })
+                        if (qs.isNotEmpty()) {
+                            val q = qs.sortedBy { it.receiveNum }.first()
+                            turn.acceptQuote(q)
                         }
                     }
                 }
             }
-        } finally {
-            //if turn.tainted?
-            update_board(board!!)
-            turn.force_done()
         }
     }
 
@@ -183,15 +182,15 @@ class RandomPlayer(first_name: String,
         wantList.forEach { w ->
             giveList.forEach { g ->
                 if (countResources(g) < 4 && countResources(w) > 4)
-                    result += Quote(this.info(), g, 1, w, 1)
+                    result += Quote(this.ref(), g, 1, w, 1)
             }
         }
         return result
     }
 
     /**
-     * Ask the org.jjk3.player to select some cards from a list.
-     * This is used when a org.jjk3.player must discard or resource
+     * Ask the player to select some cards from a list.
+     * This is used when a player must discard or resource
      * monopoly or year of plenty
      */
     override fun select_resource_cards(cards: List<Resource>, count: Int, reason: Int): List<Resource> {
@@ -226,18 +225,18 @@ class SinglePurchasePlayer(first_name: String,
             players, reason)
 
     val setupTurnStrategy = HighestProbablitySetup(this)
-    fun do_setup_turn(turn: SetupTurn) = setupTurnStrategy.do_setup_turn(turn)
+    fun do_setup_turn(turn: SetupTurn) = setupTurnStrategy.handleSetupTurn(turn)
     var desired_piece: Purchaseable? = null
     var cards_needed: List<Resource> = emptyList()
-    override fun take_turn(turn: Turn, is_setup: Boolean) {
-        super.take_turn(turn, is_setup)
+    override fun take_turn(turn: Turn) {
+        super.take_turn(turn)
         //if (delay > 0) Thread.sleep(delay)
         try {
-            if (turn.is_setup) {
+            if (turn is SetupTurn) {
                 do_setup_turn(turn as SetupTurn)
             } else {
-                if (!turn.has_rolled()) {
-                    turn.roll_dice()
+                if (!turn.hasRolled()) {
+                    turn.rollDice()
                 }
                 desired_piece = calculate_desired_piece(turn)
 
@@ -256,11 +255,11 @@ class SinglePurchasePlayer(first_name: String,
                             cardsIDontNeed = cardsIDontNeed.diff_without_unique(cards_needed)
 
                             if (cards_needed.isNotEmpty() && cardsIDontNeed.size >= 2) {
-                                val qs = turn.get_quotes(cards_needed, cardsIDontNeed)
+                                val qs = turn.getQuotes(cards_needed, cardsIDontNeed)
                                 if (qs.isNotEmpty()) {
                                     val q = qs.sortedBy { it.receiveNum }.first()
                                     if (countResources(q.receiveType) >= q.receiveNum) {
-                                        turn.accept_quote(q)
+                                        turn.acceptQuote(q)
                                     }
                                 } else {
                                     break1 = true
@@ -277,7 +276,7 @@ class SinglePurchasePlayer(first_name: String,
                 }
             }
         } catch(e: Exception) {
-            log.error("BLAH color(${info().color}) $e", e)
+            log.error("BLAH color(${ref().color}) $e", e)
         } finally {
             //if turn.tainted?
             update_board(board!!)
@@ -297,7 +296,7 @@ class SinglePurchasePlayer(first_name: String,
             if (!iHaveToOffer.isEmpty()) {
                 iWant.forEach { want ->
                     iHaveToOffer.forEach { have ->
-                        result += Quote(this.info(), want, 1, have, 1)
+                        result += Quote(this.ref(), want, 1, have, 1)
                     }
                 }
             }
@@ -305,8 +304,8 @@ class SinglePurchasePlayer(first_name: String,
         return result
     }
 
-    // Ask the org.jjk3.player to select some cards from a list.
-    // This is used when a org.jjk3.player must discard or resource monopoly or year of plenty
+    // Ask the player to select some cards from a list.
+    // This is used when a player must discard or resource monopoly or year of plenty
     override fun select_resource_cards(cards: List<Resource>, count: Int, reason: Int): List<Resource> {
         var selection: List<Resource> = emptyList()
         var cards_to_select_from = cards
@@ -342,7 +341,7 @@ class SinglePurchasePlayer(first_name: String,
             }
         }
         if (piecesForSale.settlements.size() > 0) {
-            val spots = board!!.getValidSettlementSpots(true, color)
+            val spots = board!!.getValidSettlementSpots( color)
             if (spots.isNotEmpty()) {
                 return Settlement(color)
             }
@@ -357,7 +356,7 @@ class SinglePurchasePlayer(first_name: String,
         return null
     }
 
-    // Calculate the cards that this org.jjk3.player needs to get to purchase
+    // Calculate the cards that this player needs to get to purchase
     // the desired_piece
     // Class -> Array of Cards
     fun calculate_cards_needed(piece: Purchaseable): List<Resource> {
@@ -365,7 +364,7 @@ class SinglePurchasePlayer(first_name: String,
     }
 
     // Place your desired piece
-    // This method assumes that the org.jjk3.player can afford the piece
+    // This method assumes that the player can afford the piece
     fun place_desired_piece() {
         when (desired_piece) {
             is Road -> {
@@ -391,7 +390,7 @@ class SinglePurchasePlayer(first_name: String,
                         val _longest = board!!.getLongestRoad(firstEdge).size
                         board!!.removeRoad(spot.coords())
                         if (_longest > longest) {
-                            this.current_turn!!.place_road(spot.coords())
+                            this.current_turn!!.placeRoad(spot.coords())
                             foundGoodSpot = true
                             break1 = true
                         }
@@ -399,18 +398,18 @@ class SinglePurchasePlayer(first_name: String,
                 }
                 //Then, try to pick an edge that has no cities on it.
                 if (!foundGoodSpot) {
-                    current_turn!!.place_road(spots.first().coords())
+                    current_turn!!.placeRoad(spots.first().coords())
                 }
             }
             is Settlement -> {
-                val settlement_spots = board!!.getValidSettlementSpots(true, color).sortedBy {
+                val settlement_spots = board!!.getValidSettlementSpots(color).sortedBy {
                     Dice.getProbability(it)
                 }
                 if (settlement_spots.isEmpty()) {
                     throw IllegalStateException("No Valid Spots")
                 }
                 //spots = spots.sortBy{it.getProbability}
-                current_turn!!.place_settlement(settlement_spots.last().coords())
+                current_turn!!.placeSettlement(settlement_spots.last().coords())
             }
             is City -> {
                 val city_spots = board!!.getValidCitySpots(color).sortedBy { Dice.getProbability(it) }
@@ -419,7 +418,7 @@ class SinglePurchasePlayer(first_name: String,
                 }
                 //city_spots.sort!{|a,b| a.getProbability <=> b.getProbability}
                 /*if (chatter) admin.chat_msg(this, "We built this city...on wheat and ore...")*/
-                current_turn!!.place_city(city_spots.last().coords())
+                current_turn!!.placeCity(city_spots.last().coords())
             }
             else -> throw IllegalStateException("Invalid desired_piece")
         }

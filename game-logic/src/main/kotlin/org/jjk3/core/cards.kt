@@ -28,7 +28,7 @@ abstract class DevelopmentCard : ActionCard(), Purchaseable {
 }
 
 /**
- * Allows a org.jjk3.player to move the bandit. This can be played before the dice are rolled.
+ * Allows a player to move the bandit. This can be played before the dice are rolled.
  */
 class SoldierCard : DevelopmentCard() {
     override fun use(turn: Turn) {
@@ -37,11 +37,11 @@ class SoldierCard : DevelopmentCard() {
         val banitHex = turn.player.move_bandit(old_bandit_hex).coords
         val actual__hex: Hex = turn.admin.board.getHex(banitHex) ?: throw IllegalArgumentException(
                 "Could not find hex $banitHex")
-        turn.move_bandit(actual__hex)
+        turn.moveBandit(actual__hex)
     }
 }
 
-/** Allows a org.jjk3.player to build 2 roads in his turn */
+/** Allows a player to build 2 roads in his turn */
 class RoadBuildingCard : DevelopmentCard() {
     override fun use(turn: Turn) {
         turn.player.give_free_roads(2)
@@ -55,13 +55,13 @@ class ResourceMonopolyCard : DevelopmentCard() {
         val res = turn.player.select_resource_cards(Resource.values().toList(), 1,
                 Admin.SELECT_CARDS_RES_MONOPOLY).first()
 
-        turn.admin.other_players(turn.player.info()).forEach { p ->
+        turn.admin.otherPlayers(turn.player.ref()).forEach { p ->
             val cards: List<ResourceCard> = (1..p.countResources(res)).map { ResourceCard(res) }
             if (cards.isEmpty()) {
                 log.info("${turn.player} is trying to take $res cards from $p, but $p has none.")
             } else {
                 log.info("${turn.player} is taking $cards from $p")
-                p.del_cards(cards, 7)
+                p.takeCards(cards, 7)
                 turn.player.add_cards(cards)
             }
         }

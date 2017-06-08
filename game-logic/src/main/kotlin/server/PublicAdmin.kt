@@ -24,18 +24,18 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
     override fun register(registrant: Player): Unit {
         //Players can only register before the game starts or if there are bots playing.
         var taking_over_bot: Player? = null
-        val can_join = !is_game_in_progress() || bots().isNotEmpty()
+        val can_join = !isGameInProgress() || bots().isNotEmpty()
         if (can_join) {
-            //Wrap the org.jjk3.player in a trusted version of a org.jjk3.player.  This makes sure that there is a local copy keeping track of points, pieces, etc.
+            //Wrap the player in a trusted version of a player.  This makes sure that there is a local copy keeping track of points, pieces, etc.
             val registrant = TrustedPlayer(registrant, 4, 5, 15)
             //if (initial_player.isInstanceOf<ProxyObject>){
-            //	initial_player.json_connection.org.jjk3.player = registrant
+            //	initial_player.json_connection.player = registrant
             //}
             registrant.board = board
-            val preferred_color = registrant.preferred_color //Only ask the org.jjk3.player once
+            val preferred_color = registrant.preferred_color //Only ask the player once
 
             //Assign a color
-            if (is_game_waiting()) {
+            if (isGameWaiting()) {
                 if (preferred_color != null && available_colors.contains(preferred_color)) {
                     registrant.color = preferred_color
                     available_colors -= preferred_color
@@ -56,7 +56,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
                     taking_over_bot = getPlayer(color)
                 }
             }
-            //tell the org.jjk3.player how many pieces they have
+            //tell the player how many pieces they have
             /*registrant.copy_pieces_left.forEach { (entry) ->
                 initial_player.addPiecesLeft(entry._1, entry._2)
             }*/
@@ -65,21 +65,21 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
             if (taking_over_bot != null) {
                 //TODO replace_player(taking_over_bot, registrant)
                 players.forEach { p ->
-                    registrant.player_joined(p.info())
-                } //Tell the  org.jjk3.player about the other players
+                    registrant.playerJoined(p.ref())
+                } //Tell the  player about the other players
             } else {
                 players.forEach { p ->
-                    registrant.player_joined(p.info())
-                } //Tell the  org.jjk3.player about the other players
+                    registrant.playerJoined(p.ref())
+                } //Tell the  player about the other players
                 registerObserver(registrant)
                 players += registrant
-                //tell the  org.jjk3.player about all the other players
-                send_observer_msg { it.player_joined(registrant.info()) }
+                //tell the  player about all the other players
+                send_observer_msg { it.playerJoined(registrant.ref()) }
             }
             log.info("Player joined: $registrant")
             if (players.size == max_players) {
                 //game_mutex.synchronize { () ->
-                val future = play_game()
+                val future = playGame()
                 //}
                 return
             }
@@ -90,7 +90,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
 
     /** This is called by the client to easily plus bots */
     fun add_bot(name: String, last_name: String = "") {
-        if (!is_game_in_progress()) {
+        if (!isGameInProgress()) {
             val bot: Bot = SinglePurchasePlayer(name, last_name, this)
             bot.delay = 2
             register(bot)
@@ -104,20 +104,20 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
         }
     }
 
-    override fun give_turn(turn: Turn, player: Player): Turn {
+    override fun giveTurn(turn: Turn, player: Player): Turn {
         try {
-            super.give_turn(turn, player)
+            super.giveTurn(turn, player)
         } catch (err: TimeoutException) {
             val skipped = times_skipped.incrementAndGet(player.color)
-            log.error("Player's Turn Timed-out. turn:$turn Time skipped:$skipped org.jjk3.player:$player", err)
-            /*admin_msg(org.jjk3.player.full_name() + " took too long.  A bot is filling in.")*/
+            log.error("Player's Turn Timed-out. turn:$turn Time skipped:$skipped player:$player", err)
+            /*admin_msg(player.full_name() + " took too long.  A bot is filling in.")*/
             if (skipped == 3L) {
                 kickOut(player, IllegalStateException("Your turn was skipped too many times"))
             } else {
                 // TOOD:Finish the bots Make a temporary bot to take over for a turn.
-                /*            	val tmpBot = SinglePurchasePlayer.copy(org.jjk3.player, "Tempbot","The Robot", self)
-        val actingBot =  TrustedPlayer(this,  ActingBot(tmpBot, org.jjk3.player), log, org.jjk3.player.color, org.jjk3.player.piecesLeft(City), org.jjk3.player.piecesLeft(Settlement), org.jjk3.player.piecesLeft(Road), org.jjk3.player.cards, org.jjk3.player.get_played_dev_cards)
-        currentTurn().org.jjk3.player = actingBot
+                /*            	val tmpBot = SinglePurchasePlayer.copy(player, "Tempbot","The Robot", self)
+        val actingBot =  TrustedPlayer(this,  ActingBot(tmpBot, player), log, player.color, player.piecesLeft(City), player.piecesLeft(Settlement), player.piecesLeft(Road), player.cards, player.get_played_dev_cards)
+        currentTurn().player = actingBot
         actingBot.take_turn(currentTurn, currentTurn().is_setup)
         tmpBot = nil
         actingBot = nil
