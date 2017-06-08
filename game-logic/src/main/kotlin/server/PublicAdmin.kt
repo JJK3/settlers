@@ -32,7 +32,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
             //	initial_player.json_connection.player = registrant
             //}
             registrant.board = board
-            val preferred_color = registrant.preferred_color //Only ask the player once
+            val preferred_color = registrant.preferredColor //Only ask the player once
 
             //Assign a color
             if (isGameWaiting()) {
@@ -60,7 +60,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
             /*registrant.copy_pieces_left.forEach { (entry) ->
                 initial_player.addPiecesLeft(entry._1, entry._2)
             }*/
-            registrant.update_board(board)
+            registrant.updateBoard(board)
 
             if (taking_over_bot != null) {
                 //TODO replace_player(taking_over_bot, registrant)
@@ -110,15 +110,15 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
         } catch (err: TimeoutException) {
             val skipped = times_skipped.incrementAndGet(player.color)
             log.error("Player's Turn Timed-out. turn:$turn Time skipped:$skipped player:$player", err)
-            /*admin_msg(player.full_name() + " took too long.  A bot is filling in.")*/
+            /*admin_msg(player.fullName() + " took too long.  A bot is filling in.")*/
             if (skipped == 3L) {
                 kickOut(player, IllegalStateException("Your turn was skipped too many times"))
             } else {
                 // TOOD:Finish the bots Make a temporary bot to take over for a turn.
                 /*            	val tmpBot = SinglePurchasePlayer.copy(player, "Tempbot","The Robot", self)
-        val actingBot =  TrustedPlayer(this,  ActingBot(tmpBot, player), log, player.color, player.piecesLeft(City), player.piecesLeft(Settlement), player.piecesLeft(Road), player.cards, player.get_played_dev_cards)
+        val actingBot =  TrustedPlayer(this,  ActingBot(tmpBot, player), log, player.color, player.piecesLeft(City), player.piecesLeft(Settlement), player.piecesLeft(Road), player.cards, player.getPlayedDevCards)
         currentTurn().player = actingBot
-        actingBot.take_turn(currentTurn, currentTurn().is_setup)
+        actingBot.takeTurn(currentTurn, currentTurn().is_setup)
         tmpBot = nil
         actingBot = nil
         */

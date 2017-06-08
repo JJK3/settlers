@@ -20,7 +20,7 @@ class Quote(
             val player = admin.getPlayer(bidder.color)!!
             if (player.countResources(giveType) < giveNum) {
                 throw  IllegalStateException("Bidder $bidder does not have enough resources for this quote:${this} " +
-                        "Bidder cards:${player.get_cards()}")
+                        "Bidder cards:${player.cards}")
             }
         }
     }

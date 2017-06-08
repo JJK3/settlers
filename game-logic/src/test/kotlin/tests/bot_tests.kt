@@ -95,7 +95,7 @@ class BotTest < Test::Unit::TestCase
     p4 = SinglePurchasePlayer.("SinglePurchasePlayer", "", a)
     a.register(p1, p2, p3, p4)
     wait_,_timeout(10){ !a.isGameDone }
-    assert_not_equal(a.getPlayer(p1.color).full_name, p1.full_name)
+    assert_not_equal(a.getPlayer(p1.color).fullName, p1.fullName)
     assert(p1.is_a?(CheatingBot))
     assert(!(a.getPlayer(p1.color).is_a?(CheatingBot)))
  }
@@ -104,7 +104,7 @@ end
 
 
 class CheatingBot < SinglePurchasePlayer
-  fun take_turn(turn)
+  fun takeTurn(turn)
     super
     turn.rollDice
     turn.rollDice

@@ -178,7 +178,7 @@ open class Admin(
             players.forEach { player ->
                 val cards: List<Card> = board.getCards(sum, player.color).map { ResourceCard(it) }
                 if (cards.isNotEmpty()) {
-                    player.add_cards(cards)
+                    player.addCards(cards)
                     send_observer_msg { it.playerReceivedCards(player.ref(), cards) }
                 }
             }
@@ -194,7 +194,7 @@ open class Admin(
     open fun register(registrant: Player): Unit {
         if (!isGameInProgress()) {
             registrant.board = board
-            val preferred_color = registrant.preferred_color
+            val preferred_color = registrant.preferredColor
             if (isGameWaiting()) {
                 if (preferred_color != null && available_colors.contains(preferred_color)) {
                     registrant.color = preferred_color
@@ -205,7 +205,7 @@ open class Admin(
                     registrant.color = chosen_color
                 }
             }
-            registrant.update_board(board)
+            registrant.updateBoard(board)
             registerObserver(registrant)
             players += registrant
             send_observer_msg { it.playerJoined(registrant.ref()) }
@@ -263,7 +263,7 @@ open class Admin(
                 }
             }
         }
-        return score + player.get_extra_victory_points()
+        return score + player.getExtraVictoryPoints()
     }
 
     fun getScores() = players.map { p: Player -> Pair(p.ref(), getScore(p)) }.toMap()
@@ -293,7 +293,7 @@ open class Admin(
         return result
     }
 
-    fun countSoliders(player: Player): Int = player.get_played_dev_cards().count { it is SoldierCard }
+    fun countSoliders(player: Player): Int = player.playedDevCards.count { it is SoldierCard }
     /** Check to see if someone one.  If so, end the game */
     fun checkForWinner(): Boolean {
         checkForLongestRoad()
@@ -344,7 +344,7 @@ open class Admin(
             throw IllegalStateException()
         }
         currentTurn()?.receivedQuote(quote)
-        currentTurn()?.player?.offer_quote(quote)
+        currentTurn()?.player?.offerQuote(quote)
     }
 
     /*
@@ -358,7 +358,7 @@ open class Admin(
 
         //Add user quotes
         otherPlayers(player.ref()).forEach { p: Player ->
-            val userQuotes = p.get_user_quotes(p.ref(), wantList, giveList)
+            val userQuotes = p.getUserQuotes(p.ref(), wantList, giveList)
             userQuotes.forEach { quote: Quote ->
                 try {
                     if (quote.bidder != p.ref()) {
@@ -416,7 +416,7 @@ open class Admin(
                 //Give the turn to the player
                 turn.state = TurnState.Active
                 observers.forEach { it.getTurn(player.ref(), turn.javaClass) }
-                player.take_turn(turn)
+                player.takeTurn(turn)
                 if (!turn.isDone()) {
                     log.warn("Turn SHOULD BE DONE.  it's:${turn.state}    $player   $turn")
                 }
@@ -492,7 +492,7 @@ open class Admin(
       }
       kicked_out << player
       bot_player = SinglePurchasePlayer.copy(player, "Robo", "", self)
-      trusted_bot = TrustedPlayer.(self, bot_player, log, player.color, player.piecesLeft(City), player.piecesLeft(Settlement), player.piecesLeft(Road), player.cards, player.get_played_dev_cards)
+      trusted_bot = TrustedPlayer.(self, bot_player, log, player.color, player.piecesLeft(City), player.piecesLeft(Settlement), player.piecesLeft(Road), player.cards, player.getPlayedDevCards)
 
       replace_player(player, trusted_bot)
       begin
@@ -562,9 +562,9 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
         //Each player must first get rid of half their cards if they more than 7
         admin.players.forEach { p ->
             try {
-                if (p.count_resources() > 7) {
-                    val how_many_cards_to_lose = p.count_resources() / 2
-                    val chosen_cards = p.select_resource_cards(p.resource_cards().map { it.resource },
+                if (p.resourceCards().size > 7) {
+                    val how_many_cards_to_lose = p.resourceCards().size / 2
+                    val chosen_cards = p.selectResourceCards(p.resourceCards().map { it.resource },
                             how_many_cards_to_lose,
                             Admin.SELECT_CARDS_ROLLED_7)
                     if (chosen_cards.size != how_many_cards_to_lose)
@@ -581,7 +581,7 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
         //Then move the bandit
         log.info("Rolled a 7, move the bandit.")
         admin.board.tiles.values.find { it.has_bandit }?.let { current_bandit_hex ->
-            val _hex = admin.currentTurn()!!.player.move_bandit(current_bandit_hex)
+            val _hex = admin.currentTurn()!!.player.moveBandit(current_bandit_hex)
             admin.board.getHex(_hex.coords).let { local_hex ->
                 admin.currentTurn()!!.moveBandit(local_hex)
             }

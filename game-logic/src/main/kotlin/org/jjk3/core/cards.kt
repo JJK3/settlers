@@ -34,7 +34,7 @@ class SoldierCard : DevelopmentCard() {
     override fun use(turn: Turn) {
         val old_bandit_hex: Hex = turn.admin.board.tiles.values.find(Hex::has_bandit) ?: throw IllegalArgumentException(
                 "Could not find hex with bandit")
-        val banitHex = turn.player.move_bandit(old_bandit_hex).coords
+        val banitHex = turn.player.moveBandit(old_bandit_hex).coords
         val actual__hex: Hex = turn.admin.board.getHex(banitHex) ?: throw IllegalArgumentException(
                 "Could not find hex $banitHex")
         turn.moveBandit(actual__hex)
@@ -44,7 +44,7 @@ class SoldierCard : DevelopmentCard() {
 /** Allows a player to build 2 roads in his turn */
 class RoadBuildingCard : DevelopmentCard() {
     override fun use(turn: Turn) {
-        turn.player.give_free_roads(2)
+        turn.player.giveFreeRoads(2)
         log.debug("Giving 2 roads to ${turn.player}: ${turn.player.purchasedRoads}")
     }
 }
@@ -52,7 +52,7 @@ class RoadBuildingCard : DevelopmentCard() {
 /** Allows a user to steal a specific resource from all other players */
 class ResourceMonopolyCard : DevelopmentCard() {
     override fun use(turn: Turn) {
-        val res = turn.player.select_resource_cards(Resource.values().toList(), 1,
+        val res = turn.player.selectResourceCards(Resource.values().toList(), 1,
                 Admin.SELECT_CARDS_RES_MONOPOLY).first()
 
         turn.admin.otherPlayers(turn.player.ref()).forEach { p ->
@@ -62,7 +62,7 @@ class ResourceMonopolyCard : DevelopmentCard() {
             } else {
                 log.info("${turn.player} is taking $cards from $p")
                 p.takeCards(cards, 7)
-                turn.player.add_cards(cards)
+                turn.player.addCards(cards)
             }
         }
     }
@@ -71,11 +71,11 @@ class ResourceMonopolyCard : DevelopmentCard() {
 /** Lets a user select 2 resources and plus them to his hand */
 class YearOfPlentyCard : DevelopmentCard() {
     override fun use(turn: Turn) {
-        val res = turn.player.select_resource_cards(Resource.values().toList(), 2, Admin.SELECT_CARDS_YEAR_OF_PLENTY)
+        val res = turn.player.selectResourceCards(Resource.values().toList(), 2, Admin.SELECT_CARDS_YEAR_OF_PLENTY)
         if (res.size != 2) {
-            throw RuleException("select_resource_cards expected 2 cards but was " + res)
+            throw RuleException("selectResourceCards expected 2 cards but was " + res)
         }
-        turn.player.add_cards(res.map(::ResourceCard))
+        turn.player.addCards(res.map(::ResourceCard))
     }
 }
 

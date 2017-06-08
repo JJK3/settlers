@@ -1,7 +1,7 @@
 package org.jjk3.player
 
-import org.jjk3.core.*
 import org.apache.log4j.Logger
+import org.jjk3.core.*
 import java.io.Serializable
 
 interface PlayerListener {
@@ -9,8 +9,8 @@ interface PlayerListener {
 }
 
 abstract class Player(
-        val first_name: String,
-        val last_name: String,
+        val firstName: String,
+        val lastName: String,
         val cities: Int = 4,
         val settlements: Int = 5,
         val roads: Int = 15) : GameObserver {
@@ -20,29 +20,32 @@ abstract class Player(
     }
 
     var _color: String = ""
-    var cards_mutex = Object()
-    var pieces_mutex = Object()
-    var board_mutex = Object()
+    var cardsMutex = Object()
+    var piecesMutex = Object()
+    var boardMutex = Object()
 
     var purchasedRoads = 0
-    var preferred_color: String? = null
-    var played_dev_cards = emptyList<DevelopmentCard>()
-    private var game_finished: Boolean = false
-    protected var current_turn: Turn? = null
-    protected var cards = emptyList<Card>()
-    open fun give_free_roads(num_roads: Int): Unit {
+    var preferredColor: String? = null
+    var playedDevCards = emptyList<DevelopmentCard>()
+    private var gameFinished: Boolean = false
+    protected var currentTurn: Turn? = null
+    var cards = emptyList<Card>()
+        protected set(value) {
+            field = value
+        }
+
+    open fun giveFreeRoads(num_roads: Int): Unit {
         purchasedRoads += num_roads
     }
 
-    open fun remove_free_roads(num_roads: Int): Unit {
+    open fun removeFreeRoads(num_roads: Int): Unit {
         purchasedRoads -= num_roads
     }
 
-    fun free_roads(): Int = purchasedRoads
-    fun get_played_dev_cards(): List<DevelopmentCard> = played_dev_cards
+    fun freeRoads(): Int = purchasedRoads
     /** Notifys the player that they have offically played a development card */
-    open fun played_dev_card(card: DevelopmentCard): Unit {
-        played_dev_cards += card
+    open fun playedDevCard(card: DevelopmentCard): Unit {
+        playedDevCards += card
     }
 
     fun ref() = PlayerReference(this)
@@ -60,31 +63,27 @@ abstract class Player(
         }
 
     fun count_dev_cards(): Int {
-        return get_cards(DevelopmentCard::class.java)
+        return getCards(DevelopmentCard::class.java)
     }
 
-    /** Get an immutable map of cards */
-    fun get_cards(): List<Card> = cards
-
-    fun get_cards(card: Class<out Card>): Int {
-        return synchronized(cards_mutex) {
+    fun getCards(card: Class<out Card>): Int {
+        return synchronized(cardsMutex) {
             cards.count { card.isInstance(it) }
         }
     }
 
     fun countResources(resource: Resource): Int = cards.count { it is ResourceCard && it.resource == resource }
-
     /** Inform this player that another player has offered a quote.  i'm not sure we need this.*/
-    open fun offer_quote(quote: Quote) {
+    open fun offerQuote(quote: Quote) {
 
     }
 
-    fun get_extra_victory_points(): Int = played_dev_cards.filterIsInstance(VictoryPointCard::class.java).count()
+    fun getExtraVictoryPoints(): Int = playedDevCards.filterIsInstance(VictoryPointCard::class.java).count()
     /**
      * Can this player afford the given pieces?
      * [pieces] an Array of buyable piece classes (Cities, Settlements, etc.)
      */
-    fun can_afford(pieces: List<Purchaseable>): Boolean {
+    fun canAfford(pieces: List<Purchaseable>): Boolean {
         val totalCost = pieces.flatMap { it.price }
         try {
             removeCards(cards, totalCost)
@@ -98,9 +97,9 @@ abstract class Player(
      * Tell this player that they received more cards.
      * [cards] an Array of card types
      */
-    open fun add_cards(cards_to_add: List<Card>) {
-        synchronized(cards_mutex) { ->
-            log.debug("${full_name()} Adding cards $cards_to_add")
+    open fun addCards(cards_to_add: List<Card>) {
+        synchronized(cardsMutex) { ->
+            log.debug("${fullName()} Adding cards $cards_to_add")
             cards += cards_to_add
         }
     }
@@ -119,7 +118,7 @@ abstract class Player(
      *          8 = Other
      */
     open fun takeCards(cards_to_lose: List<Card>, reason: Int) {
-        synchronized(cards_mutex) { ->
+        synchronized(cardsMutex) { ->
             cards = removeCards(cards, cards_to_lose)
         }
     }
@@ -137,13 +136,13 @@ abstract class Player(
     }
 
     /** This method should be extended */
-    open fun take_turn(turn: Turn) {
-        this.current_turn = turn
+    open fun takeTurn(turn: Turn) {
+        this.currentTurn = turn
     }
 
     /** This should be overidden in the implementations */
-    abstract fun get_user_quotes(player_reference: PlayerReference, wantList: List<Resource>,
-                                 giveList: List<Resource>): List<Quote>
+    abstract fun getUserQuotes(player_reference: PlayerReference, wantList: List<Resource>,
+                               giveList: List<Resource>): List<Quote>
 
     /**
      * Tell this player to move the bandit
@@ -151,7 +150,7 @@ abstract class Player(
      * return a  hex
      * This method should be overridden
      */
-    abstract fun move_bandit(old_hex: Hex): Hex
+    abstract fun moveBandit(old_hex: Hex): Hex
 
     /**
      * Ask the player to select some cards from a list.
@@ -159,13 +158,13 @@ abstract class Player(
      * monopoly or year of plenty
      * This method should be overridden
      */
-    abstract fun select_resource_cards(cards: List<Resource>, count: Int, reason: Int): List<Resource>
+    abstract fun selectResourceCards(cards: List<Resource>, count: Int, reason: Int): List<Resource>
 
     /**
      * Ask the player to choose a player among the given list
      * This method should be overridden
      */
-    abstract fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference
+    abstract fun selectPlayer(players: List<PlayerReference>, reason: Int): PlayerReference
 
     override fun playerMovedBandit(player_reference: PlayerReference, hex: Hex) {
         board?.moveBandit(hex)
@@ -176,7 +175,7 @@ abstract class Player(
         if (board == null) {
             throw  IllegalStateException("Game is starting before a org.jjk3.board has been set")
         }
-        game_finished = false
+        gameFinished = false
     }
 
     /**
@@ -185,11 +184,11 @@ abstract class Player(
      * [points] the randomNumber of points they won ,.
      */
     override fun gameEnd(winner: PlayerReference, points: Int) {
-        game_finished = true
+        gameFinished = true
     }
 
     fun get_board(): Board? {
-        return synchronized(board_mutex) {
+        return synchronized(boardMutex) {
             board
         }
     }
@@ -198,7 +197,7 @@ abstract class Player(
      * Update this observer's version of the org.jjk3.board
      * [board] the  version of the org.jjk3.board
      */
-    open fun update_board(b: Board) {
+    open fun updateBoard(b: Board) {
         this.board = b
     }
 
@@ -229,16 +228,13 @@ abstract class Player(
         board?.placeCity(City(player.color), nodeCoordinate)
     }
 
-    /** How many resource cards does this player have? */
-    fun count_resources() = resource_cards().size
-
     /**
      * Gets all the resource cards this user has
      * returns a list of ResourceTypes
      */
-    fun resource_cards(): List<ResourceCard> = cards.filterIsInstance(ResourceCard::class.java)
+    fun resourceCards(): List<ResourceCard> = cards.filterIsInstance(ResourceCard::class.java)
 
-    fun full_name(): String = this.first_name + " " + this.last_name
+    fun fullName(): String = this.firstName + " " + this.lastName
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false
@@ -255,7 +251,7 @@ abstract class Player(
     }
 
     override fun toString(): String {
-        return "Player(first_name='$first_name', last_name='$last_name', color='$color')"
+        return "Player(first_name='$firstName', last_name='$lastName', color='$color')"
     }
 
 }
@@ -266,27 +262,27 @@ abstract class Player(
  * This way, other players will only know so much information about each other
  */
 class PlayerReference(player: Player) : Serializable {
-    val first_name: String = player.first_name
-    val last_name: String = player.last_name
+    val firstName: String = player.firstName
+    val lastName: String = player.lastName
     val color = player.color
-    fun full_name(): String = this.first_name + " " + this.last_name
-    override fun toString(): String = "<PlayerReference name=\"${full_name()}\"  color=\"$color\" />"
+    fun fullName(): String = this.firstName + " " + this.lastName
+    override fun toString(): String = "<PlayerReference name=\"${fullName()}\"  color=\"$color\" />"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false
 
         other as PlayerReference
 
-        if (first_name != other.first_name) return false
-        if (last_name != other.last_name) return false
+        if (firstName != other.firstName) return false
+        if (lastName != other.lastName) return false
         if (color != other.color) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = first_name.hashCode()
-        result = 31 * result + last_name.hashCode()
+        var result = firstName.hashCode()
+        result = 31 * result + lastName.hashCode()
         result = 31 * result + color.hashCode()
         return result
     }

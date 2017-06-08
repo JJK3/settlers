@@ -6,7 +6,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
 
     var placedRoad: Edge? = null
     var placedSettlement: Node? = null
-    override fun placeRoad(edgeCoordinate: EdgeCoordinate) {
+    private fun assertCanPlaceRoad(edgeCoordinate: EdgeCoordinate) {
         assertGameIsNotDone()
         assertState(TurnState.Active)
         assertRule(placedRoad == null, "Too many roads placed in setup")
@@ -14,12 +14,15 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         val edge = board.getEdge(edgeCoordinate)
         val validSpots = board.getValidRoadSpots(player.color, placedSettlement)
         assertRule(validSpots.contains(edge), "Road must touch the settlement just placed")
-        this.placedRoad = edge
+    }
 
-        val road = purchaseRoad()
+    override fun placeRoad(edgeCoordinate: EdgeCoordinate) {
+        assertCanPlaceRoad(edgeCoordinate)
+        val edge = board.getEdge(edgeCoordinate)
+        val road = board.getPiecesForSale(player.color).takeRoad()
         board.placeRoad(road, edgeCoordinate)
+        this.placedRoad = edge
         admin.observers.forEach { it.placedRoad(player.ref(), edgeCoordinate) }
-        admin.checkForWinner()
     }
 
     override fun assertCanPlaceSettlement(coord: NodeCoordinate) {
@@ -39,9 +42,8 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         val node = board.getNode(coord)
         val settlement = board.getPiecesForSale(player.color).takeSettlement()
         board.placeCity(settlement, coord)
-        log.info("Settlement Placed by $player on $coord")
-        placedSettlement = node
         collect2CardsOnLastSettlement(node)
+        placedSettlement = node
         admin.observers.forEach { it.placedSettlement(player.ref(), coord) }
         return node
     }
@@ -52,7 +54,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
             // A Player gets cards for the 2nd settlement he places
             val touchingHexes = node.hexes.keys.filterNot { it.resource == null }
             val resources = touchingHexes.map(Hex::get_card)
-            player.add_cards(resources.map(::ResourceCard))
+            player.addCards(resources.map(::ResourceCard))
         } else if (settlementCount != 1) {
             breakRule("Bad Game state.  Wrong # of settlements placed: " + settlementCount)
         }
@@ -77,5 +79,4 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         throw RuleException("Cannot buy development card during setup")
     }
 
-    override fun payFor(piece: Purchaseable): Unit {}
 }

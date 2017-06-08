@@ -24,14 +24,14 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
     }
 
     /** The list of action cards currently in play. i.e. SoldierCards etc. */
-    fun activeCards() = player.get_played_dev_cards().filter { !it.isDone }
+    fun activeCards() = player.playedDevCards.filter { !it.isDone }
 
     open fun buyDevelopmentCard(): DevelopmentCard {
         assertState(TurnState.RolledDice)
         val (newDevCards, card) = admin.board.developmentCards.removeRandom()
         admin.board.developmentCards = newDevCards
         payFor(card)
-        player.add_cards(listOf(card))
+        player.addCards(listOf(card))
         return card
     }
 
@@ -73,30 +73,28 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
      * This is called by the admin and the soldier card
      */
     fun moveBandit(_tile: Hex) {
-        //TODO: implement rule checking here so people can't move the
-        //bandit whenever they want.
+        //TODO: implement rule checking here so people can't move the bandit whenever they want.
         board.moveBandit(_tile)
 
         admin.observers.forEach {
             it.playerMovedBandit(player.ref(), _tile)
         }
 
-        //Take a card from a player
-        //the colors of the cities touching the  tile
-        val touching_colors = _tile.nodes_with_cities().map { it.city!!.color }.distinct()
-        val touching_players = touching_colors.map {
+        //Take a card from a player the colors of the cities touching the tile
+        val touchingColors = _tile.nodes_with_cities().map { it.city!!.color }.distinct()
+        val touchingPlayers = touchingColors.map {
             getPlayer(it)!!.ref()
         }.filterNot { it == player.ref() }.toList()
 
-        var player_to_take_from: PlayerReference? = null
-        if (!touching_players.isEmpty()) {
-            if (touching_players.size == 1) {
-                player_to_take_from = touching_players.first()
-            } else {
-                player_to_take_from = player.select_player(touching_players, 1)
-            }
-            takeRandomCard(player_to_take_from)
-            admin.observers.forEach { it.playerStoleCard(player.ref(), player_to_take_from!!, 1) }
+        if (!touchingPlayers.isEmpty()) {
+            val playerToTakeFrom: PlayerReference =
+                    if (touchingPlayers.size == 1) {
+                        touchingPlayers.first()
+                    } else {
+                        player.selectPlayer(touchingPlayers, 1)
+                    }
+            takeRandomCard(playerToTakeFrom)
+            admin.observers.forEach { it.playerStoleCard(player.ref(), playerToTakeFrom, 1) }
         }
     }
 
@@ -105,26 +103,28 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
     }
 
     open fun placeRoad(edgeCoordinate: EdgeCoordinate) {
-        log.debug("$player is trying to buy a road")
+        assertCanPlaceRoad(edgeCoordinate)
+        // If a player uses a roadBuilding card, then his purchasedRoads > 0
+        // they shouldn't pay for the road in this case.
+        val road: Road =
+                if (player.freeRoads() > 0) {
+                    player.removeFreeRoads(1)
+                    board.getPiecesForSale(player.color).takeRoad()
+                } else {
+                    purchaseRoad()
+                }
+        board.placeRoad(road, edgeCoordinate)
+        admin.observers.forEach { it.placedRoad(player.ref(), edgeCoordinate) }
+        admin.checkForWinner()
+    }
+
+    private fun assertCanPlaceRoad(edgeCoordinate: EdgeCoordinate) {
         assertGameIsNotDone()
         assertState(TurnState.RolledDice)
         val edge = board.getEdge(edgeCoordinate)
         if (!board.getValidRoadSpots(player.color).contains(edge)) {
             breakRule("Invalid Road Placement $edgeCoordinate")
         }
-
-        // If a player uses a roadBuilding card, then his purchasedRoads > 0
-        // they shouldn't pay for the road in this case.
-        val road: Road
-        if (player.free_roads() > 0) {
-            player.remove_free_roads(1)
-            road = board.getPiecesForSale(player.color).takeRoad()
-        } else {
-            road = purchaseRoad()
-        }
-        board.placeRoad(road, edgeCoordinate)
-        admin.observers.forEach { it.placedRoad(player.ref(), edgeCoordinate) }
-        admin.checkForWinner()
     }
 
     /** A helper method to get a player based on a color */
@@ -150,6 +150,17 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
     }
 
     open fun placeCity(coord: NodeCoordinate): Node {
+        assertCanPlaceCity(coord)
+        val node = board.getNode(coord)
+        val city = purchaseCity()
+        board.getPiecesForSale(player.color).putBack(node.city as Settlement)
+        board.placeCity(city, coord)
+        admin.observers.forEach { it.placedCity(player.ref(), coord) }
+        admin.checkForWinner()
+        return node
+    }
+
+    private fun assertCanPlaceCity(coord: NodeCoordinate) {
         assertGameIsNotDone()
         assertState(TurnState.RolledDice)
         val node = board.getNode(coord)
@@ -157,12 +168,6 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         assertRule(node.city?.color == player.color, "Invalid City Placement. " +
                 "Settlement has wrong color at $coord. expected: ${player.color} was:${node.city?.color}")
         assertRule(node.city is Settlement, "A city must be placed on top of a Settlement, not a ${node.city}")
-        val city = purchaseCity()
-        board.getPiecesForSale(player.color).putBack(node.city as Settlement)
-        board.placeCity(city, coord)
-        admin.observers.forEach { it.placedCity(player.ref(), coord) }
-        admin.checkForWinner()
-        return node
     }
 
     protected fun assertGameIsNotDone() {
@@ -205,12 +210,11 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         state = TurnState.Done
     }
 
+    /** Make sure that the player has enough cards to make the offer */
     fun validateQuoteLists(wantList: List<Resource>, giveList: List<Resource>) {
-        // Make sure that the player has enough cards to make the offer
         for (giveType in giveList.distinct()) {
             if (player.countResources(giveType) == 0) {
-                breakRule("You can't offer cards that you don't have: " +
-                        "Offering $giveType but has ${player.get_cards()}")
+                breakRule("Offering $giveType but only has ${player.cards}")
             }
         }
     }
@@ -219,16 +223,15 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
      * Take a random card from another player and plus it to your own cards
      * If player has no cards, do nothing
      */
-    fun takeRandomCard(victim: PlayerReference): Unit {
-        val real_victim = getPlayer(victim.color)!!
-        val available_resources = real_victim.resource_cards()
-        if (available_resources.isEmpty()) {
-            log.debug("Could not take a random card from " + victim)
+    private fun takeRandomCard(victim: PlayerReference): Unit {
+        val realVictim = getPlayer(victim.color)!!
+        if (realVictim.resourceCards().isEmpty()) {
+            log.debug("Could not take a random card from $victim")
             return
         }
-        val res = available_resources.pick_random()
-        real_victim.takeCards(listOf(res), DELETE_REASON_OTHER)
-        player.add_cards(listOf(res))
+        val res = realVictim.resourceCards().pick_random()
+        realVictim.takeCards(listOf(res), DELETE_REASON_OTHER)
+        player.addCards(listOf(res))
     }
 
     fun assertRule(condition: Boolean, errorMsg: String) {
@@ -237,16 +240,20 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         }
     }
 
-    fun playDevelopmentCard(card: DevelopmentCard) {
+    private fun assertCanPlayeDevelopmentCard(card: DevelopmentCard) {
         assertRule(!admin.isGameDone(), "Game is already over")
-        assertRule(player.get_cards().contains(card),
-                "Player does not own the card being played. cards:" + player.get_cards())
+        assertRule(player.cards.contains(card),
+                "Player does not own the card being played. cards:" + player.cards)
         assertRule(!isDone(), "Turn is done")
         assertRule(card is SoldierCard || this.hasRolled(),
                 "$card played before dice were rolled. Current State: $state")
+    }
+
+    fun playDevelopmentCard(card: DevelopmentCard) {
+        assertCanPlayeDevelopmentCard(card)
         card.use(this)
         player.takeCards(listOf(card), DELETE_REASON_OTHER)
-        player.played_dev_card(card)
+        player.playedDevCard(card)
         admin.checkForWinner()
     }
 
@@ -283,12 +290,12 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         log.debug("$player is accepting a trade from $bidder_name ${quote.giveNum} ${quote.giveType}" +
                 " for ${quote.receiveNum} ${quote.receiveType}")
 
-        player.add_cards((0..quote.giveNum).map { ResourceCard(quote.giveType) })
+        player.addCards((0..quote.giveNum).map { ResourceCard(quote.giveType) })
         player.takeCards((0..quote.receiveNum).map {
             ResourceCard(quote.receiveType)
         }, DELETE_REASON_TRADE)
         if (bidder_player != null) {
-            bidder_player.add_cards((0..quote.receiveNum).map { ResourceCard(quote.receiveType) })
+            bidder_player.addCards((0..quote.receiveNum).map { ResourceCard(quote.receiveType) })
             bidder_player.takeCards((0..quote.giveNum).map {
                 ResourceCard(quote.giveType)
             }, DELETE_REASON_TRADE)
