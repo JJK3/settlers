@@ -12,14 +12,12 @@ class RuleException(msg: String) : Exception(msg)
  */
 open class Board(val should_enforce_bandit: Boolean = true) {
     companion object {
-        var log = Logger.getLogger(this::class.java)
+        var log: Logger = Logger.getLogger(this::class.java)
     }
 
     val tiles = HashMap<HexCoordinate, Hex>()
-
     var developmentCards = DevelopmentCardBag.create()
     val piecesForSale = ConcurrentHashMap<String, PiecesForSale>()
-
     private val longestRoadAuthority = LongestRoadDetector(this)
     fun allNodes(): Set<Node> = tiles.values.flatMap { it.nodes.toList() }.toSet()
     fun allEdges() = tiles.values.flatMap { it.edges.toList() }.toSet()
@@ -69,7 +67,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     /** Gets a list of cards, that the given player should receive */
     fun getCards(number: Int, color: String): List<Resource> {
         val valid_hexes = tiles.values.filter { t ->
-            t.number == number && !t.has_bandit && t.resource != null
+            t.number == number && ! t.has_bandit && t.resource != null
         }
         return valid_hexes.flatMap { hex ->
             hex.nodes_with_cities(color).flatMap { n ->
@@ -93,7 +91,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     fun removeRoad(edgeCoordinate: EdgeCoordinate): Edge =
             synchronized(this) {
                 getEdge(edgeCoordinate).let { edge ->
-                    if (!edge.hasRoad()) throw IllegalStateException("Edge does not have a road on it")
+                    if (! edge.hasRoad()) throw IllegalStateException("Edge does not have a road on it")
                     edge.road = null
                     edge
                 }
@@ -138,7 +136,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      */
     fun getValidSettlementSpots(color: String): List<Node> =
             synchronized(this) {
-                allNodes().filter { n -> hasTouchingRoad(n, color) && is2AwayFromCity(n) && !n.hasCity() }
+                allNodes().filter { n -> hasTouchingRoad(n, color) && is2AwayFromCity(n) && ! n.hasCity() }
             }
 
     /**
@@ -146,7 +144,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      */
     fun getValidSettlementSpots(): List<Node> =
             synchronized(this) {
-                allNodes().filter { is2AwayFromCity(it) && !it.hasCity() }
+                allNodes().filter { is2AwayFromCity(it) && ! it.hasCity() }
             }
 
     private fun hasTouchingRoad(n: Node, roadColor: String) = n.edges().find { it.road?.color == roadColor } != null
@@ -162,11 +160,11 @@ open class Board(val should_enforce_bandit: Boolean = true) {
         synchronized(this) {
             var result: List<Edge> = emptyList()
             allNodes().forEach { n ->
-                if (n.hasCity() && n.city!!.color == road_color) {
+                if (n.hasCity() && n.city !!.color == road_color) {
                     result += (n.edges().filterNot(Edge::hasRoad))
-                } else if (!n.hasCity()) {
+                } else if (! n.hasCity()) {
                     n.edges().forEach { edge ->
-                        if (edge.hasRoad() && edge.road!!.color == road_color) {
+                        if (edge.hasRoad() && edge.road !!.color == road_color) {
                             result += (n.edges().filterNot(Edge::hasRoad))
                         }
                     }

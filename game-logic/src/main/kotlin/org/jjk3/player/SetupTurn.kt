@@ -54,7 +54,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
             // A Player gets cards for the 2nd settlement he places
             val touchingHexes = node.hexes.keys.filterNot { it.resource == null }
             val resources = touchingHexes.map(Hex::get_card)
-            player.addCards(resources.map(::ResourceCard))
+            player.giveCards(resources.map(::ResourceCard))
         } else if (settlementCount != 1) {
             breakRule("Bad Game state.  Wrong # of settlements placed: " + settlementCount)
         }

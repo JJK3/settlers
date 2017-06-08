@@ -38,9 +38,9 @@ object StandardPortBag {
 }
 
 class PiecesForSale(val color: String) {
-    var cities: Bag<City> = Bag((0..4).map { City(color) })
-    var settlements: Bag<Settlement> = Bag((0..5).map { Settlement(color) })
-    var roads: Bag<Road> = Bag((0..15).map { Road(color) })
+    var cities: Bag<City> = Bag((1..4).map { City(color) })
+    var settlements: Bag<Settlement> = Bag((1..5).map { Settlement(color) })
+    var roads: Bag<Road> = Bag((1..15).map { Road(color) })
     fun takeCity(): City = cities.removeRandom().also { cities = it.first }.second
     fun takeSettlement(): Settlement = settlements.removeRandom().also { settlements = it.first }.second
     fun takeRoad(): Road = roads.removeRandom().also { roads = it.first }.second

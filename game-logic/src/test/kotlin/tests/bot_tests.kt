@@ -42,7 +42,7 @@ class BotTest {
 //        val p3 = RandomPlayer("Player3", "", a, 4, 5, 15)
 //        val p4 = RandomPlayer("SinglePurchasePlayer", "", a, 4, 5, 15)
         listOf(p1, p2).forEach { a.register(it) }
-        Util.while_with_timeout(10) { a.isGameDone() }
+        Util.while_with_timeout(10000) { !a.isGameDone() }
     }
 
 }

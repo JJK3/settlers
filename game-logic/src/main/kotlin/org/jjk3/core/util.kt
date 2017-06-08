@@ -7,7 +7,7 @@ class IllegalArgumentException(msg: String) : Exception(msg)
 object Util {
     fun while_with_timeout(timeout: Long = 10000, sleep_millis: Long = 100, test: () -> Boolean) {
         val maxTimestamp = System.currentTimeMillis() + timeout
-        while (test()) {
+        while (test.invoke()) {
             if (System.currentTimeMillis() > maxTimestamp) {
                 throw TimeoutException("Timeout expired. " + timeout)
             }

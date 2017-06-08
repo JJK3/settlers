@@ -16,7 +16,7 @@ abstract class Player(
         val roads: Int = 15) : GameObserver {
 
     companion object {
-        val log = Logger.getLogger(this::class.java)
+        val log: Logger = Logger.getLogger(this::class.java)
     }
 
     var _color: String = ""
@@ -43,7 +43,7 @@ abstract class Player(
     }
 
     fun freeRoads(): Int = purchasedRoads
-    /** Notifys the player that they have offically played a development card */
+    /** Notifies the player that they have officially played a development card */
     open fun playedDevCard(card: DevelopmentCard): Unit {
         playedDevCards += card
     }
@@ -84,7 +84,7 @@ abstract class Player(
      * [pieces] an Array of buyable piece classes (Cities, Settlements, etc.)
      */
     fun canAfford(pieces: List<Purchaseable>): Boolean {
-        val totalCost = pieces.flatMap { it.price }
+        val totalCost = pieces.flatMap { it.price }.map(::ResourceCard)
         try {
             removeCards(cards, totalCost)
             return true
@@ -97,10 +97,10 @@ abstract class Player(
      * Tell this player that they received more cards.
      * [cards] an Array of card types
      */
-    open fun addCards(cards_to_add: List<Card>) {
+    open fun giveCards(cardsToAdd: List<Card>) {
         synchronized(cardsMutex) { ->
-            log.debug("${fullName()} Adding cards $cards_to_add")
-            cards += cards_to_add
+            log.debug("${fullName()} Adding cards $cardsToAdd")
+            cards += cardsToAdd
         }
     }
 
@@ -117,13 +117,13 @@ abstract class Player(
      *          7 = Bought a Resource card
      *          8 = Other
      */
-    open fun takeCards(cards_to_lose: List<Card>, reason: Int) {
+    open fun takeCards(cardsToLose: List<Card>, reason: Turn.ReasonToTakeCards) {
         synchronized(cardsMutex) { ->
-            cards = removeCards(cards, cards_to_lose)
+            cards = removeCards(cards, cardsToLose)
         }
     }
 
-    private fun removeCards(cards: List<Card>, cardsToRemove: List<*>): List<Card> {
+    private fun removeCards(cards: List<Card>, cardsToRemove: List<Card>): List<Card> {
         if (cardsToRemove.isEmpty()) {
             return cards
         }
@@ -166,7 +166,7 @@ abstract class Player(
      */
     abstract fun selectPlayer(players: List<PlayerReference>, reason: Int): PlayerReference
 
-    override fun playerMovedBandit(player_reference: PlayerReference, hex: Hex) {
+    override fun playerMovedBandit(player: PlayerReference, hex: Hex) {
         board?.moveBandit(hex)
     }
 
@@ -180,7 +180,7 @@ abstract class Player(
 
     /**
      * Inform the observer that the game has finished.
-     * [player] the player who won
+     * [winner] the player who won
      * [points] the randomNumber of points they won ,.
      */
     override fun gameEnd(winner: PlayerReference, points: Int) {

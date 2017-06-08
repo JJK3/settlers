@@ -178,7 +178,7 @@ open class Admin(
             players.forEach { player ->
                 val cards: List<Card> = board.getCards(sum, player.color).map { ResourceCard(it) }
                 if (cards.isNotEmpty()) {
-                    player.addCards(cards)
+                    player.giveCards(cards)
                     send_observer_msg { it.playerReceivedCards(player.ref(), cards) }
                 }
             }
@@ -347,13 +347,23 @@ open class Admin(
         currentTurn()?.player?.offerQuote(quote)
     }
 
+    fun validateQuote(quote: Quote): Unit {
+        if (quote.bidder != null) {
+            val player = getPlayer(quote.bidder.color)!!
+            if (player.countResources(quote.giveType) < quote.giveNum) {
+                throw IllegalStateException(
+                        "Bidder $quote.bidder does not have enough resources for this quote:${this} " +
+                                "Bidder cards:${player.cards}")
+            }
+        }
+    }
+
     /*
     * Gets a List of quotes from the bank and other users
     * Optionally takes a block that iterates through each quote as they come
     * [player] The player asking for quotes
     */
     fun getQuotes(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
-        //var result = ThreadSafeList.(getQuotesFromBank(player, wantList, giveList))
         var result = getQuotesFromBank(player, wantList, giveList)
 
         //Add user quotes
@@ -364,7 +374,7 @@ open class Admin(
                     if (quote.bidder != p.ref()) {
                         throw RuleException("Player is offering a quote where the bidder is not himself. Player:$p")
                     }
-                    quote.validate(this)
+                    validateQuote(quote)
                     result += quote
                 } catch(e: Exception) {
                     log.error("User $p offered an invalid Quote. $e", e)
@@ -376,7 +386,7 @@ open class Admin(
 
     /** Returns a List of Quote objects from the bank for a specific player */
     fun getQuotesFromBank(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
-        //start , the bank's 4:1 offer
+        //start with the bank's 4:1 offer
         var result: List<Quote> = emptyList()
 
         wantList.forEach { w: Resource ->
@@ -407,7 +417,8 @@ open class Admin(
      * Any errors that occur during the turn should be handled here.
      */
     open fun giveTurn(turn: Turn, player: Player): Turn {
-        if (!isGameDone()) { //We need to check for the winner before we give the next player a turn
+        //We need to check for the winner before we give the next player a turn
+        if (!isGameDone()) {
             log.debug("**Giving $turn to $player")
             current_turn_obj = turn
 
@@ -569,8 +580,8 @@ class StandardDiceHandler(val admin: Admin) : DiceHandler {
                             Admin.SELECT_CARDS_ROLLED_7)
                     if (chosen_cards.size != how_many_cards_to_lose)
                         throw  RuleException(
-                                "You did not select the right randomNumber of cards. expected:" + how_many_cards_to_lose + " found:" + chosen_cards.size)
-                    p.takeCards(chosen_cards.map(::ResourceCard), 4)
+                                "You did not select the right randomNumber of cards. expected:$how_many_cards_to_lose found:${chosen_cards.size}")
+                    p.takeCards(chosen_cards.map(::ResourceCard), Turn.ReasonToTakeCards.Rolled7)
                 }
             } catch (re: RuleException) {
                 log.error("REPLACING PLAYER WITH BOT: " + p, re)

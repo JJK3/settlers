@@ -15,15 +15,6 @@ class Quote(
         val giveNum: Int) {
 
     override fun toString() = "[Quote $receiveNum $receiveType for $giveNum $giveType from $bidder]"
-    fun validate(admin: Admin): Unit {
-        if (bidder != null) {
-            val player = admin.getPlayer(bidder.color)!!
-            if (player.countResources(giveType) < giveNum) {
-                throw  IllegalStateException("Bidder $bidder does not have enough resources for this quote:${this} " +
-                        "Bidder cards:${player.cards}")
-            }
-        }
-    }
 
     /** Is another quote a better deal? (And also the same resources) */
     fun isBetterQuote(other: Quote): Boolean = other.receiveNum < this.receiveNum &&

@@ -61,8 +61,8 @@ class ResourceMonopolyCard : DevelopmentCard() {
                 log.info("${turn.player} is trying to take $res cards from $p, but $p has none.")
             } else {
                 log.info("${turn.player} is taking $cards from $p")
-                p.takeCards(cards, 7)
-                turn.player.addCards(cards)
+                p.takeCards(cards, Turn.ReasonToTakeCards.Other)
+                turn.player.giveCards(cards)
             }
         }
     }
@@ -75,7 +75,7 @@ class YearOfPlentyCard : DevelopmentCard() {
         if (res.size != 2) {
             throw RuleException("selectResourceCards expected 2 cards but was " + res)
         }
-        turn.player.addCards(res.map(::ResourceCard))
+        turn.player.giveCards(res.map(::ResourceCard))
     }
 }
 

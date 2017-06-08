@@ -49,10 +49,7 @@ class Node {
 
     fun hasCity(): Boolean = this.city != null
     fun hasPort(): Boolean = this.port != null
-    override fun toString(): String {
-        return "Node(city=$city, port=$port, coords=$hexes)"
-    }
-
+    override fun toString(): String = "Node(city=$city, port=$port, coords=$hexes)"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other?.javaClass != javaClass) return false

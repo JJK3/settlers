@@ -36,12 +36,12 @@ class TrustedPlayer(
             my_board = value
         }
 
-    override fun addCards(cards_to_add: List<Card>) {
-        original_player.addCards(cards_to_add)
-        super.addCards(cards_to_add)
+    override fun giveCards(cardsToAdd: List<Card>) {
+        original_player.giveCards(cardsToAdd)
+        super.giveCards(cardsToAdd)
     }
 
-    override fun takeCards(cards_to_add: List<Card>, i: Int) {
+    override fun takeCards(cards_to_add: List<Card>, i: Turn.ReasonToTakeCards) {
         original_player.takeCards(cards_to_add, i)
         super.takeCards(cards_to_add, i)
     }
