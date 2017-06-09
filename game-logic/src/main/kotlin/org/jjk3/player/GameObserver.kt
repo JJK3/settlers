@@ -1,9 +1,6 @@
 package org.jjk3.player
 
-import org.jjk3.core.Card
-import org.jjk3.core.EdgeCoordinate
-import org.jjk3.core.Hex
-import org.jjk3.core.NodeCoordinate
+import org.jjk3.core.*
 
 /**
  * Observer interface to watch the game.
@@ -69,7 +66,7 @@ interface GameObserver {
      *  Update this observer's version of the org.jjk3.board
      * @param board the  version of the org.jjk3.board
      */
-    fun updateBoard(board: Any) {
+    fun updateBoard(board: Board) {
     }
 
     /**

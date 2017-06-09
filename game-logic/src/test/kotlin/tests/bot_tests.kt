@@ -15,13 +15,13 @@ class BotTest {
         (1..100).forEach { i ->
             val b = StandardBoard()
             val a = Admin(b, 4, 10)
-            val p1 = RandomPlayer("Player1", "", a, 4, 5, 15)
-            val p2 = RandomPlayer("Player2", "", a, 4, 5, 15)
-            val p3 = RandomPlayer("Player3", "", a, 4, 5, 15)
-            val p4 = SinglePurchasePlayer("SinglePurchasePlayer", "", a, 4, 5, 15)
-            val p5 = SinglePurchasePlayer("SinglePurchasePlayer2", "", a, 4, 5, 15)
-            val p6 = SinglePurchasePlayer("SinglePurchasePlayer3", "", a, 4, 5, 15)
-            val p7 = SinglePurchasePlayer("SinglePurchasePlayer4", "", a, 4, 5, 15)
+            val p1 = RandomPlayer(a)
+            val p2 = RandomPlayer(a)
+            val p3 = RandomPlayer(a)
+            val p4 = SinglePurchasePlayer(a)
+            val p5 = SinglePurchasePlayer(a)
+            val p6 = SinglePurchasePlayer(a)
+            val p7 = SinglePurchasePlayer(a)
             listOf(p1, p2, p3, p4).forEach { a.register(it) }
             Util.while_with_timeout(30000) { !a.isGameDone() }
             winners += a.getWinner()!!
@@ -37,8 +37,8 @@ class BotTest {
     fun test_random_bot_game(): Unit {
         val b = StandardBoard()
         val a = Admin(b, 2, 10)
-        val p1 = RandomPlayer("Player1", "", a, 4, 5, 15)
-        val p2 = RandomPlayer("Player2", "", a, 4, 5, 15)
+        val p1 = RandomPlayer(a)
+        val p2 = RandomPlayer(a)
 //        val p3 = RandomPlayer("Player3", "", a, 4, 5, 15)
 //        val p4 = RandomPlayer("SinglePurchasePlayer", "", a, 4, 5, 15)
         listOf(p1, p2).forEach { a.register(it) }

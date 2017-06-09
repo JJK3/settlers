@@ -176,7 +176,7 @@ open class Admin(
         } else {
             //Give cards to all the players
             players.forEach { player ->
-                val cards: List<Card> = board.getCards(sum, player.color).map { ResourceCard(it) }
+                val cards: List<Card> = board.getCards(sum, player.color!!).map { ResourceCard(it) }
                 if (cards.isNotEmpty()) {
                     player.giveCards(cards)
                     send_observer_msg { it.playerReceivedCards(player.ref(), cards) }
@@ -193,19 +193,21 @@ open class Admin(
     /** Register a player or players with this game. */
     open fun register(registrant: Player): Unit {
         if (!isGameInProgress()) {
-            registrant.board = board
-            val preferred_color = registrant.preferredColor
+            registrant.updateBoard(board)
             if (isGameWaiting()) {
-                if (preferred_color != null && available_colors.contains(preferred_color)) {
-                    registrant.color = preferred_color
-                    available_colors -= preferred_color
-                } else {
+                if (registrant is HasColorPreference){
+                    val preferred_color = registrant.preferredColor
+                    if (preferred_color != null && available_colors.contains(preferred_color)) {
+                        registrant.color = preferred_color
+                        available_colors -= preferred_color
+                    }
+                }
+                if (registrant.color == null){
                     val (chosen_color, _available_colors) = available_colors.remove_random()
                     available_colors = _available_colors
                     registrant.color = chosen_color
                 }
             }
-            registrant.updateBoard(board)
             registerObserver(registrant)
             players += registrant
             send_observer_msg { it.playerJoined(registrant.ref()) }
@@ -226,16 +228,16 @@ open class Admin(
         log.debug("Checking for stalemate")
         players.forEach { player ->
             val color = player.color
-            val piecesForSale = board.getPiecesForSale(color)
-            val settlementSpots = board.getValidSettlementSpots(color)
+            val piecesForSale = board.getPiecesForSale(color!!)
+            val settlementSpots = board.getValidSettlementSpots(color!!)
             if (Math.min(settlementSpots.size, piecesForSale.settlements.size()) > 0) {
                 return false
             }
-            val citySpots = board.getValidCitySpots(color).size
+            val citySpots = board.getValidCitySpots(color!!).size
             if (Math.min(citySpots, piecesForSale.cities.size()) > 0) {
                 return false
             }
-            val roadSpots = board.getValidRoadSpots(color).size
+            val roadSpots = board.getValidRoadSpots(color!!).size
             if (Math.min(roadSpots, piecesForSale.roads.size()) > 0) {
                 return false
             }
@@ -248,8 +250,8 @@ open class Admin(
     /** Get the score of the given player */
     fun getScore(player: Player): Int {
         var score = 0
-        getPlayer(player.color)?.let { p ->
-            if (board.hasLongestRoad(p.color)) {
+        getPlayer(player.color!!)?.let { p ->
+            if (board.hasLongestRoad(p.color!!)) {
                 score += 2
             }
             who_has_largest_army()?.let { largestArmy ->
@@ -268,13 +270,13 @@ open class Admin(
 
     fun getScores() = players.map { p: Player -> Pair(p.ref(), getScore(p)) }.toMap()
     fun countResourceCards(playerReference: PlayerReference): Int {
-        val player: Player = getPlayer(playerReference.color) ?: throw  IllegalArgumentException(
+        val player: Player = getPlayer(playerReference.color!!) ?: throw  IllegalArgumentException(
                 "Could not find player , color:${playerReference.color} in $players")
         return Resource.values().map { player.countResources(it) }.sum()
     }
 
     fun countAllResourceCards() = players.map { p -> listOf(p.ref(), countResourceCards(p.ref())) }
-    fun countDevelopmentCards(playerReference: PlayerReference) = getPlayer(playerReference.color)?.count_dev_cards()
+    fun countDevelopmentCards(playerReference: PlayerReference) = getPlayer(playerReference.color!!)?.countDevelopmentCards()
     /** Finds the player , the largest army, or nil if no one has it. */
     fun who_has_largest_army(): PlayerReference? {
         //The largest randomNumber of soldier cards
@@ -328,7 +330,7 @@ open class Admin(
     }
 
     /** returns the player infos that have the longest road */
-    fun whoHasLongestRoad(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color) }?.ref()
+    fun whoHasLongestRoad(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color!!) }?.ref()
 
     private fun checkForLongestRoad() {
         whoHasLongestRoad()?.let { p ->
@@ -339,17 +341,9 @@ open class Admin(
         }
     }
 
-    fun offerQuote(quote: Quote, player_reference: PlayerReference) {
-        if (quote.bidder != player_reference) {
-            throw IllegalStateException()
-        }
-        currentTurn()?.receivedQuote(quote)
-        currentTurn()?.player?.offerQuote(quote)
-    }
-
     fun validateQuote(quote: Quote): Unit {
         if (quote.bidder != null) {
-            val player = getPlayer(quote.bidder.color)!!
+            val player = getPlayer(quote.bidder.color!!)!!
             if (player.countResources(quote.giveType) < quote.giveNum) {
                 throw IllegalStateException(
                         "Bidder $quote.bidder does not have enough resources for this quote:${this} " +
@@ -392,7 +386,7 @@ open class Admin(
         wantList.forEach { w: Resource ->
             giveList.forEach { g: Resource ->
                 result += Quote(null, g, 4, w, 1)
-                board.getPorts(player.color).forEach { p: Port ->
+                board.getPorts(player.color!!).forEach { p: Port ->
                     if ((p.kind != null && p.kind == g) || p.kind == null) {
                         val quote = Quote(null, g, p.rate, w, 1)
                         if (!result.contains(quote)) {

@@ -112,7 +112,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         val road: Road =
                 if (player.freeRoads() > 0) {
                     player.removeFreeRoads(1)
-                    board.getPiecesForSale(player.color).takeRoad()
+                    board.getPiecesForSale(player.color!!).takeRoad()
                 } else {
                     purchaseRoad()
                 }
@@ -125,7 +125,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         assertGameIsNotDone()
         assertState(TurnState.RolledDice)
         val edge = board.getEdge(edgeCoordinate)
-        if (! board.getValidRoadSpots(player.color).contains(edge)) {
+        if (! board.getValidRoadSpots(player.color!!).contains(edge)) {
             breakRule("Invalid Road Placement $edgeCoordinate")
         }
     }
@@ -147,7 +147,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         assertGameIsNotDone()
         assertState(TurnState.RolledDice)
         val node = board.getNode(coord)
-        if (! board.getValidSettlementSpots(player.color).contains(node)) {
+        if (! board.getValidSettlementSpots(player.color!!).contains(node)) {
             breakRule("Invalid Settlement Placement $coord")
         }
     }
@@ -156,7 +156,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         assertCanPlaceCity(coord)
         val node = board.getNode(coord)
         val city = purchaseCity()
-        board.getPiecesForSale(player.color).putBack(node.city as Settlement)
+        board.getPiecesForSale(player.color!!).putBack(node.city as Settlement)
         board.placeCity(city, coord)
         admin.observers.forEach { it.placedCity(player.ref(), coord) }
         admin.checkForWinner()
@@ -179,9 +179,9 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         }
     }
 
-    private fun purchaseCity() = board.getPiecesForSale(player.color).takeCity().also { payFor(it) }
-    private fun purchaseSettlement() = board.getPiecesForSale(player.color).takeSettlement().also { payFor(it) }
-    protected fun purchaseRoad() = board.getPiecesForSale(player.color).takeRoad().also { payFor(it) }
+    private fun purchaseCity() = board.getPiecesForSale(player.color!!).takeCity().also { payFor(it) }
+    private fun purchaseSettlement() = board.getPiecesForSale(player.color!!).takeSettlement().also { payFor(it) }
+    protected fun purchaseRoad() = board.getPiecesForSale(player.color!!).takeRoad().also { payFor(it) }
     /**
      * Makes a player pay for a piece
      * Throws an exception if the player doesn't have enough cards,
@@ -202,7 +202,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
             assertRule(hasRolled() && ! state.is_terminal_state,
                     "Turn ended before dice were rolled.  Current state: $state")
             assertRule(activeCards().isEmpty(), "All card actions must be finished.")
-            assertRule(player.purchasedRoads == 0, "You cannot end a turn while there are purchased pieces to place")
+            assertRule(player.freeRoads() == 0, "You cannot end a turn while there are purchased pieces to place")
             assertRule(! activeCards().any { it.single_turn_card }, "There are still active cards: ${activeCards()}")
         }
         forceDone()
@@ -227,7 +227,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
      * If player has no cards, do nothing
      */
     private fun takeRandomCard(victim: PlayerReference): Unit {
-        val realVictim = getPlayer(victim.color) !!
+        val realVictim = getPlayer(victim.color!!) !!
         if (realVictim.resourceCards().isEmpty()) {
             log.debug("Could not take a random card from $victim")
             return
@@ -262,8 +262,8 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
 
     fun acceptQuote(quote: Quote) {
         assertValidQuote(quote)
-        val bidder = quote.bidder?.let { getPlayer(it.color) }
-        val bidderName = bidder?.fullName() ?: "The Bank"
+        val bidder = quote.bidder?.let { getPlayer(it.color!!) }
+        val bidderName = bidder?.color ?: "The Bank"
         log.debug("$player is accepting a trade from $bidderName ${quote.giveNum} ${quote.giveType}" +
                 " for ${quote.receiveNum} ${quote.receiveType}")
 
@@ -288,7 +288,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         if (player.countResources(quote.receiveType) < quote.receiveNum) {
             breakRule("You don't have enough cards for this quote: " + quote)
         }
-        val bidder = quote.bidder?.let { getPlayer(it.color) }
+        val bidder = quote.bidder?.let { getPlayer(it.color!!) }
         bidder?.let {
             if (it.countResources(quote.giveType) < quote.giveNum) {
                 breakRule("Bidder $it doesn't have enough cards for this quote: $quote")

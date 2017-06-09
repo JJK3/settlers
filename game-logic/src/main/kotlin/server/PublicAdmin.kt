@@ -14,7 +14,6 @@ object SettlersExecutor {
 }
 
 class Message(val message: String, val sender: PlayerReference?) : Serializable
-
 class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_timeout_seconds: Int = 240,
                   game_timeout: Int = 1800) : Admin(board, max_players, max_points, turn_timeout_seconds,
         game_timeout) {
@@ -24,35 +23,41 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
     override fun register(registrant: Player): Unit {
         //Players can only register before the game starts or if there are bots playing.
         var taking_over_bot: Player? = null
-        val can_join = !isGameInProgress() || bots().isNotEmpty()
+        val can_join = ! isGameInProgress() || bots().isNotEmpty()
         if (can_join) {
             //Wrap the player in a trusted version of a player.  This makes sure that there is a local copy keeping track of points, pieces, etc.
-            val registrant = TrustedPlayer(registrant, 4, 5, 15)
+            val trustedPlayer = TrustedPlayer(registrant)
             //if (initial_player.isInstanceOf<ProxyObject>){
             //	initial_player.json_connection.player = registrant
             //}
-            registrant.board = board
-            val preferred_color = registrant.preferredColor //Only ask the player once
+            trustedPlayer.updateBoard(board)
 
             //Assign a color
             if (isGameWaiting()) {
-                if (preferred_color != null && available_colors.contains(preferred_color)) {
-                    registrant.color = preferred_color
-                    available_colors -= preferred_color
-                } else {
-                    //instead of being random, users should have a choice here
+                if (registrant is HasColorPreference) {
+                    val preferred_color = registrant.preferredColor
+                    if (preferred_color != null && available_colors.contains(preferred_color)) {
+                        trustedPlayer.color = preferred_color
+                        available_colors -= preferred_color
+                    }
+                }
+                if (trustedPlayer.color == null) {
                     val (chosen_color, _available_colors) = available_colors.remove_random()
                     available_colors = _available_colors
-                    registrant.color = chosen_color
+                    trustedPlayer.color = chosen_color
                 }
             } else {
                 val bot_colors = bots().map { it.color }
-                if (preferred_color != null && bot_colors.contains(preferred_color)) {
-                    taking_over_bot = getPlayer(preferred_color)
-                    registrant.color = preferred_color
-                } else {
-                    val color = bot_colors.pick_random()
-                    registrant.color = color
+                if (registrant is HasColorPreference) {
+                    val preferred_color = registrant.preferredColor
+                    if (preferred_color != null && bot_colors.contains(preferred_color)) {
+                        taking_over_bot = getPlayer(preferred_color)
+                        trustedPlayer.color = preferred_color
+                    }
+                }
+                if (trustedPlayer.color == null) {
+                    val color = bot_colors.pick_random()!!
+                    trustedPlayer.color = color
                     taking_over_bot = getPlayer(color)
                 }
             }
@@ -60,23 +65,22 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
             /*registrant.copy_pieces_left.forEach { (entry) ->
                 initial_player.addPiecesLeft(entry._1, entry._2)
             }*/
-            registrant.updateBoard(board)
 
             if (taking_over_bot != null) {
                 //TODO replace_player(taking_over_bot, registrant)
                 players.forEach { p ->
-                    registrant.playerJoined(p.ref())
+                    trustedPlayer.playerJoined(p.ref())
                 } //Tell the  player about the other players
             } else {
                 players.forEach { p ->
-                    registrant.playerJoined(p.ref())
+                    trustedPlayer.playerJoined(p.ref())
                 } //Tell the  player about the other players
-                registerObserver(registrant)
-                players += registrant
+                registerObserver(trustedPlayer)
+                players += trustedPlayer
                 //tell the  player about all the other players
-                send_observer_msg { it.playerJoined(registrant.ref()) }
+                send_observer_msg { it.playerJoined(trustedPlayer.ref()) }
             }
-            log.info("Player joined: $registrant")
+            log.info("Player joined: $trustedPlayer")
             if (players.size == max_players) {
                 //game_mutex.synchronize { () ->
                 val future = playGame()
@@ -90,8 +94,8 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
 
     /** This is called by the client to easily plus bots */
     fun add_bot(name: String, last_name: String = "") {
-        if (!isGameInProgress()) {
-            val bot: Bot = SinglePurchasePlayer(name, last_name, this)
+        if (! isGameInProgress()) {
+            val bot: Bot = SinglePurchasePlayer(this)
             bot.delay = 2
             register(bot)
         }

@@ -12,14 +12,14 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         assertRule(placedRoad == null, "Too many roads placed in setup")
         assertRule(placedSettlement != null, "Must place settlement before road")
         val edge = board.getEdge(edgeCoordinate)
-        val validSpots = board.getValidRoadSpots(player.color, placedSettlement)
+        val validSpots = board.getValidRoadSpots(player.color!!, placedSettlement)
         assertRule(validSpots.contains(edge), "Road must touch the settlement just placed")
     }
 
     override fun placeRoad(edgeCoordinate: EdgeCoordinate) {
         assertCanPlaceRoad(edgeCoordinate)
         val edge = board.getEdge(edgeCoordinate)
-        val road = board.getPiecesForSale(player.color).takeRoad()
+        val road = board.getPiecesForSale(player.color!!).takeRoad()
         board.placeRoad(road, edgeCoordinate)
         this.placedRoad = edge
         admin.observers.forEach { it.placedRoad(player.ref(), edgeCoordinate) }
@@ -40,7 +40,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
     override fun placeSettlement(coord: NodeCoordinate): Node {
         assertCanPlaceSettlement(coord)
         val node = board.getNode(coord)
-        val settlement = board.getPiecesForSale(player.color).takeSettlement()
+        val settlement = board.getPiecesForSale(player.color!!).takeSettlement()
         board.placeCity(settlement, coord)
         collect2CardsOnLastSettlement(node)
         placedSettlement = node

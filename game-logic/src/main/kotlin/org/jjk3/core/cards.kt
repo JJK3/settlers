@@ -45,7 +45,7 @@ class SoldierCard : DevelopmentCard() {
 class RoadBuildingCard : DevelopmentCard() {
     override fun use(turn: Turn) {
         turn.player.giveFreeRoads(2)
-        log.debug("Giving 2 roads to ${turn.player}: ${turn.player.purchasedRoads}")
+        log.debug("Giving 2 roads to ${turn.player}: ${turn.player.freeRoads()}")
     }
 }
 

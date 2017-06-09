@@ -1,9 +1,7 @@
 package org.jjk3.player
 
-import org.jjk3.core.Hex
-import org.jjk3.core.Resource
-import org.jjk3.core.ResourceCard
-import org.jjk3.core.Road
+import org.jjk3.core.*
+import org.jjk3.core.Resource.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -14,85 +12,55 @@ class PlayerTest {
     lateinit var player: Player
     @Before
     fun setup() {
-        player = MockPlayer("1")
+        player = MockPlayer()
+        player.color = "red"
     }
 
     @Test
     fun del_cards() {
-        player.giveCards(listOf(Resource.Brick, Resource.Brick, Resource.Sheep).map { ResourceCard(it) })
-        assertEquals(player.cards, listOf(Resource.Brick, Resource.Brick, Resource.Sheep).map(::ResourceCard))
-        player.takeCards(listOf(Resource.Brick, Resource.Sheep).map(::ResourceCard), Turn.ReasonToTakeCards.Other)
-        assertEquals(player.cards, listOf(ResourceCard(Resource.Brick)))
+        player.giveCards(listOf(Brick, Brick, Sheep).map { ResourceCard(it) })
+        assertEquals(player.cards, listOf(Brick, Brick, Sheep).map(::ResourceCard))
+        player.takeCards(listOf(Brick, Sheep).map(::ResourceCard), Turn.ReasonToTakeCards.Other)
+        assertEquals(player.cards, listOf(ResourceCard(Brick)))
     }
 
     @Test
-    fun getPurchasedRoads() {
-    }
-
-    @Test
-    fun setPurchasedRoads() {
-    }
-
-    @Test
-    fun getPreferredColor() {
-    }
-
-    @Test
-    fun setPreferredColor() {
-    }
-
-    @Test
-    fun getPlayedDevCards() {
-    }
-
-    @Test
-    fun setPlayedDevCards() {
-    }
-
-    @Test
-    fun getCurrentTurn() {
-    }
-
-    @Test
-    fun setCurrentTurn() {
-    }
-
-    @Test
-    fun giveFreeRoads() {
-    }
-
-    @Test
-    fun removeFreeRoads() {
-    }
-
-    @Test
-    fun freeRoads() {
-    }
-
-    @Test
-    fun playedDevCard() {
-    }
-
-    @Test
-    fun count_dev_cards() {
+    fun countDevelopmentCards() {
+        player.giveCards(listOf(ResourceCard(Brick), ResourceCard(Wheat), SoldierCard()))
+        assertEquals(player.countDevelopmentCards(), 1)
     }
 
     @Test
     fun countResources() {
+        player.giveCards(listOf(ResourceCard(Brick), ResourceCard(Brick), ResourceCard(Wheat), SoldierCard()))
+        assertEquals(player.countResources(Brick), 2)
+        assertEquals(player.countResources(Wheat), 1)
     }
 
     @Test
-    fun offerQuote() {
+    fun resourceCards() {
+        player.giveCards(listOf(ResourceCard(Brick), ResourceCard(Brick), ResourceCard(Wheat), SoldierCard()))
+        assertEquals(player.resourceCards().size, 3)
     }
 
     @Test
-    fun getExtraVictoryPoints() {
+    fun countCards() {
+        player.giveCards(listOf(SoldierCard(), SoldierCard(), ResourceMonopolyCard()))
+        assertEquals(player.countCards(SoldierCard::class.java), 2)
+        assertEquals(player.countCards(ResourceMonopolyCard::class.java), 1)
     }
+
+    @Test
+    fun playDevelopmentCard(){
+        player.playedDevCard(VictoryPointCard())
+        assertEquals(player.getExtraVictoryPoints(), 1)
+    }
+
 
     @Test
     fun canAfford() {
         player.giveCards(listOf(ResourceCard(Resource.Brick), ResourceCard(Resource.Wood)))
-        assertTrue(player.canAfford(listOf(Road(player.color))))
+        assertTrue(player.canAfford(listOf(Road(player.color!!))))
     }
 
     @Test
@@ -110,109 +78,9 @@ class PlayerTest {
         assertEquals(player.cards, listOf(ResourceCard(Resource.Wood)))
     }
 
-    @Test
-    fun takeTurn() {
-    }
-
-    @Test
-    fun getUserQuotes() {
-    }
-
-    @Test
-    fun moveBandit() {
-    }
-
-    @Test
-    fun selectResourceCards() {
-    }
-
-    @Test
-    fun selectPlayer() {
-    }
-
-    @Test
-    fun playerMovedBandit() {
-    }
-
-    @Test
-    fun gameStart() {
-    }
-
-    @Test
-    fun gameEnd() {
-    }
-
-    @Test
-    fun get_board() {
-    }
-
-    @Test
-    fun updateBoard() {
-    }
-
-    @Test
-    fun placedRoad() {
-    }
-
-    @Test
-    fun placedSettlement() {
-    }
-
-    @Test
-    fun placedCity() {
-    }
-
-    @Test
-    fun resourceCards() {
-    }
-
-    @Test
-    fun getCities() {
-    }
-
-    @Test
-    fun getSettlements() {
-    }
-
-    @Test
-    fun getRoads() {
-    }
-
-    @Test
-    fun updateBoard1() {
-    }
-
-    @Test
-    fun playerReceivedCards() {
-    }
-
-    @Test
-    fun playerRolled() {
-    }
-
-    @Test
-    fun playerStoleCard() {
-    }
-
-    @Test
-    fun playerJoined() {
-    }
-
-    @Test
-    fun getTurn() {
-    }
-
-    @Test
-    fun playerHasLongestRoad() {
-    }
-
-    @Test
-    fun playerHasLargestArmy() {
-    }
-
 }
 
-class MockPlayer(id: String) : Player(id, id) {
+class MockPlayer() : Player() {
     override fun moveBandit(old_hex: Hex): Hex {
         TODO("not implemented")
     }

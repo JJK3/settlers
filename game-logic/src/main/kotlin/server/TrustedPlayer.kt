@@ -1,17 +1,14 @@
 package server
 
 import org.jjk3.core.*
-import org.jjk3.player.*
+import org.jjk3.player.Player
+import org.jjk3.player.PlayerReference
+import org.jjk3.player.Quote
+import org.jjk3.player.Turn
 
 
-class TrustedPlayer(
-        val original_player: Player,
-        cities: Int = 4,
-        settlements: Int = 5,
-        roads: Int = 15)
-    : Player(original_player.firstName, original_player.lastName, cities, settlements, roads) {
+class TrustedPlayer(val original_player: Player) : Player() {
 
-    private var my_board: Board? = null
     override fun getUserQuotes(player_reference: PlayerReference, wantList: List<Resource>,
                                giveList: List<Resource>): List<Quote> =
             original_player.getUserQuotes(player_reference, wantList, giveList)
@@ -23,17 +20,11 @@ class TrustedPlayer(
     override fun selectPlayer(players: List<PlayerReference>, reason: Int): PlayerReference =
             original_player.selectPlayer(players, reason)
 
-    override var color: String
+    override var color: String? = null
         get() = super.color
         set(value) {
             original_player.color = value
-            _color = value
-        }
-    override var board: Board?
-        get() = super.board
-        set(value) {
-            original_player.board = value
-            my_board = value
+            field = value
         }
 
     override fun giveCards(cardsToAdd: List<Card>) {
@@ -50,24 +41,19 @@ class TrustedPlayer(
         original_player.takeTurn(turn)
     }
 
-    override fun giveFreeRoads(num_roads: Int): Unit {
+    override fun giveFreeRoads(num_roads: Int): Int {
         original_player.giveFreeRoads(num_roads)
-        super.giveFreeRoads(num_roads)
+        return super.giveFreeRoads(num_roads)
     }
 
-    override fun removeFreeRoads(num_roads: Int): Unit {
+    override fun removeFreeRoads(num_roads: Int): Int {
         original_player.removeFreeRoads(num_roads)
-        super.removeFreeRoads(num_roads)
+        return super.removeFreeRoads(num_roads)
     }
 
     override fun playedDevCard(card: DevelopmentCard): Unit {
         original_player.playedDevCard(card)
         super.playedDevCard(card)
-    }
-
-    override fun offerQuote(quote: Quote) {
-        original_player.offerQuote(quote)
-        super.offerQuote(quote)
     }
 
     override fun playerMovedBandit(player_reference: PlayerReference, hex: Hex) {
