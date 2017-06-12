@@ -27,7 +27,7 @@ data class HexCoordinate(val x: Int, val y: Int) {
 }
 
 class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = HexCoordinate(-1, -1)) {
-    var has_bandit: Boolean = false
+    var hasBandit: Boolean = false
     var nodes = (0..5).map { Node() }.toTypedArray()
     var edges = (0..5).map { Edge() }.toTypedArray()
 
@@ -56,14 +56,14 @@ class Hex(val resource: Resource?, var number: Int, var coords: HexCoordinate = 
             newEdge.hexes = replaceMe(e.hexes)
             e
         }.toTypedArray()
-        hex.has_bandit = has_bandit
+        hex.hasBandit = hasBandit
         return hex
     }
 
     fun get_card(): Resource = resource ?: throw Exception("Cannot take card from a desert.")
     fun get_2_cards(): List<Resource> = listOf(get_card(), get_card())
-    fun nodes_with_cities() = nodes.filter(Node::hasCity)
-    fun nodes_with_cities(color: String) = nodes.filter { it.city?.color == color }
+    fun nodesWithCities() = nodes.filter(Node::hasCity)
+    fun nodesWithCities(color: String) = nodes.filter { it.city?.color == color }
     /** is this hex on the outside edge of the map? */
     fun isOnOutside(): Boolean = edges.any(Edge::isOutsideEdge)
 

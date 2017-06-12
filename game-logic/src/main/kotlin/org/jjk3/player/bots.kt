@@ -19,7 +19,7 @@ interface SetupTurnStrategy {
 }
 
 interface MoveBanditStrategy {
-    fun move_bandit(old_hex: Hex): Hex
+    fun move_bandit(oldLocation: HexCoordinate): HexCoordinate
     fun select_player(players: List<PlayerReference>, reason: Int): PlayerReference
 }
 
@@ -61,27 +61,27 @@ class HighestProbablitySetup(val player: Player) : SetupTurnStrategy {
 class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
     /**
      * #Tell this player to move the bandit
-     * [old_hex] the hex where the bandit currently sits
+     * [oldLocation] the hex where the bandit currently sits
      * return a  hex
      */
-    override fun move_bandit(old_hex: Hex): Hex {
+    override fun move_bandit(oldLocation: HexCoordinate): HexCoordinate {
         val preferred = player.board() !!.tiles.values.find { t ->
             val has_me = t.nodes.any { n -> n.hasCity() && n.city !!.color == player.color }
             val has_other = t.nodes.any { n -> n.hasCity() && n.city !!.color != player.color }
-            ! t.has_bandit && ! has_me && has_other
+            ! t.hasBandit && ! has_me && has_other
         }
         //admin.chat_msg(self, "gimme a card!") if chatter
         if (preferred != null) {
-            return preferred
+            return preferred.coords
         }
         val preferred2 = player.board() !!.tiles.values.find { t ->
             val has_me = t.nodes.any { n -> n.hasCity() && n.city !!.color == player.color }
-            ! t.has_bandit && ! has_me
+            ! t.hasBandit && ! has_me
         }
         if (preferred2 != null) {
-            return preferred2
+            return preferred2.coords
         }
-        return player.board() !!.tiles.values.find { ! it.has_bandit } !!
+        return player.board() !!.tiles.values.find { ! it.hasBandit }!!.coords
     }
 
     /** Ask the player to choose a player among the given list */
@@ -95,7 +95,7 @@ class TakeCardsFromAnyone(val player: Player) : MoveBanditStrategy {
 class RandomPlayer(admin: Admin) : Bot(admin) {
 
     val moveBanditStrategy = TakeCardsFromAnyone(this)
-    override fun moveBandit(old_hex: Hex): Hex = moveBanditStrategy.move_bandit(old_hex)
+    override fun moveBandit(oldLocation: HexCoordinate): HexCoordinate = moveBanditStrategy.move_bandit(oldLocation)
     override fun selectPlayer(players: List<PlayerReference>,
                               reason: Int): PlayerReference = moveBanditStrategy.select_player(
             players, reason)
@@ -208,7 +208,7 @@ class RandomPlayer(admin: Admin) : Bot(admin) {
 class SinglePurchasePlayer(admin: Admin) : Bot(admin) {
 
     val moveBanditStrategy = TakeCardsFromAnyone(this)
-    override fun moveBandit(old_hex: Hex): Hex = moveBanditStrategy.move_bandit(old_hex)
+    override fun moveBandit(oldLocation: HexCoordinate): HexCoordinate = moveBanditStrategy.move_bandit(oldLocation)
     override fun selectPlayer(players: List<PlayerReference>,
                               reason: Int): PlayerReference = moveBanditStrategy.select_player(
             players, reason)

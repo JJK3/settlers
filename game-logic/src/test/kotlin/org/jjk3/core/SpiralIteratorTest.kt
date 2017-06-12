@@ -8,15 +8,15 @@ class SpiralIteratorTest {
 
     val first = HexCoordinate(0, 0)
     val second = HexCoordinate(0, 1)
-    val third = HexCoordinate(-1, 1)
-    val fourth = HexCoordinate(-1, 0)
+    val third = HexCoordinate(- 1, 1)
+    val fourth = HexCoordinate(- 1, 0)
     lateinit var board: Board
     lateinit var spiral: SpiralIterator
     @Before
     fun setup() {
         board = MiniBoard()
         spiral = SpiralIterator(board)
-        spiral.startingTile = board.getHex(first)!!
+        spiral.startingTile = board.getHex(first)
     }
 
     @Test
@@ -30,7 +30,7 @@ class SpiralIteratorTest {
 
     @Test
     fun getNextClockwiseEdge() {
-        val hex1 = board.getHex(first)!!
+        val hex1 = board.getHex(first)
         val top = hex1.edge(EdgeNumber(0))
         val expected = hex1.edge(EdgeNumber(3))
         assertEquals(spiral.getNextClockwiseEdge(hex1, top), expected)
@@ -38,8 +38,8 @@ class SpiralIteratorTest {
 
     @Test
     fun getNextNewTile() {
-        val hex1 = board.getHex(first)!!
-        val hex2 = board.getHex(second)!!
+        val hex1 = board.getHex(first)
+        val hex2 = board.getHex(second)
         val top = hex1.edge(EdgeNumber(0))
         val secondTop = hex2.edge(EdgeNumber(0))
         assertEquals(spiral.getNextNewTile(hex1, top), Pair(hex2, secondTop))
@@ -47,8 +47,8 @@ class SpiralIteratorTest {
 
     @Test
     fun getNextNewTile2() {
-        val hex2 = board.getHex(second)!!
-        val hex3 = board.getHex(third)!!
+        val hex2 = board.getHex(second)
+        val hex3 = board.getHex(third)
         val top = hex2.edge(EdgeNumber(0))
         val thirdTopRight = hex3.edge(EdgeNumber(1))
         assertEquals(spiral.getNextNewTile(hex2, top), Pair(hex3, thirdTopRight))
@@ -63,21 +63,20 @@ class SpiralIteratorTest {
         assertEquals(MediumBoard.coords, hexes.map { it.coords })
     }
 
-}
+    class MediumBoard : Board() {
+        companion object {
+            var coords = listOf(HexCoordinate(0, 0), HexCoordinate(1, 0), HexCoordinate(1, 1), HexCoordinate(0, 2),
+                    HexCoordinate(- 1, 1), HexCoordinate(- 1, 0), HexCoordinate(0, 1))
+        }
 
-class MediumBoard : Board() {
-    companion object {
-        var coords = listOf(HexCoordinate(0, 0), HexCoordinate(1, 0), HexCoordinate(1, 1), HexCoordinate(0, 2),
-                HexCoordinate(-1, 1), HexCoordinate(-1, 0), HexCoordinate(0, 1))
-    }
-
-    init {
-        var tileBag = TileBag.newBag()
-        for (c in coords) {
-            val (newBag, hex) = tileBag.removeRandom()
-            tileBag = newBag
-            hex.coords = c
-            addHex(hex)
+        init {
+            var tileBag = TileBag.newBag()
+            for (c in coords) {
+                val (newBag, hex) = tileBag.removeRandom()
+                tileBag = newBag
+                hex.coords = c
+                addHex(hex)
+            }
         }
     }
 }

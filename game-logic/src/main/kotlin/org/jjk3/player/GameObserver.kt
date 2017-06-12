@@ -9,19 +9,11 @@ import org.jjk3.core.*
 interface GameObserver {
 
     /**
-     * This is called by the admin anytime any player recieves cards.
-     * @param player the player that recieved the cards
-     * @param cards a list of Card Classes
-     */
-    fun playerReceivedCards(player: PlayerReference, cards: List<Card>): Unit {
-    }
-
-    /**
      * This is called by the admin when anyone rolls the dice
      * @param player the acting player
      * @param roll A tuple of the numbers that were rolled
      */
-    fun playerRolled(player: PlayerReference, roll: Pair<Int, Int>): Unit {
+    fun playerRolled(player: PlayerReference, roll: DiceRoll): Unit {
     }
 
     /**
@@ -74,7 +66,7 @@ interface GameObserver {
      * @param player the player that moved the bandit
      * @param hex the hex that the bandit is now on.
      */
-    fun playerMovedBandit(player: PlayerReference, hex: Hex) {
+    fun playerMovedBandit(player: PlayerReference, hex: HexCoordinate) {
     }
 
     /**

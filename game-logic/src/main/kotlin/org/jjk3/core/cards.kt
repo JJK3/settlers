@@ -32,12 +32,11 @@ abstract class DevelopmentCard : ActionCard(), Purchaseable {
  */
 class SoldierCard : DevelopmentCard() {
     override fun use(turn: Turn) {
-        val old_bandit_hex: Hex = turn.admin.board.tiles.values.find(Hex::has_bandit) ?: throw IllegalArgumentException(
+        val old_bandit_hex: Hex = turn.admin.board.tiles.values.find(Hex::hasBandit) ?: throw IllegalArgumentException(
                 "Could not find hex with bandit")
-        val banitHex = turn.player.moveBandit(old_bandit_hex).coords
-        val actual__hex: Hex = turn.admin.board.getHex(banitHex) ?: throw IllegalArgumentException(
-                "Could not find hex $banitHex")
-        turn.moveBandit(actual__hex)
+        val banitHex = turn.player.moveBandit(old_bandit_hex.coords)
+        val actualHex: Hex = turn.admin.board.getHex(banitHex)
+        turn.moveBandit(actualHex.coords)
     }
 }
 

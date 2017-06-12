@@ -13,7 +13,7 @@ class TrustedPlayer(val original_player: Player) : Player() {
                                giveList: List<Resource>): List<Quote> =
             original_player.getUserQuotes(player_reference, wantList, giveList)
 
-    override fun moveBandit(old_hex: Hex): Hex = original_player.moveBandit(old_hex)
+    override fun moveBandit(oldLocation: HexCoordinate): HexCoordinate = original_player.moveBandit(oldLocation)
     override fun selectResourceCards(cards: List<Resource>, count: Int, reason: Int): List<Resource> =
             original_player.selectResourceCards(cards, count, reason)
 
@@ -56,9 +56,9 @@ class TrustedPlayer(val original_player: Player) : Player() {
         super.playedDevCard(card)
     }
 
-    override fun playerMovedBandit(player_reference: PlayerReference, hex: Hex) {
-        original_player.playerMovedBandit(player_reference, hex)
-        super.playerMovedBandit(player_reference, hex)
+    override fun playerMovedBandit(player: PlayerReference, hex: HexCoordinate) {
+        original_player.playerMovedBandit(player, hex)
+        super.playerMovedBandit(player, hex)
     }
 
     override fun gameStart(maxScore: Int) {

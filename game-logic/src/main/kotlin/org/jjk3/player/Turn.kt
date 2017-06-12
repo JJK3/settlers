@@ -7,23 +7,70 @@ import kotlin.IllegalArgumentException
 
 open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTurnState() {
 
+    companion object {
+        var log: Logger = Logger.getLogger(Turn::class.java)
+    }
+
     enum class ReasonToTakeCards {
         PurchasedSettlement,
         PurchasedCity,
         PurchasedRoad,
+        PurchasedDevelopmentCard,
         Rolled7,
         MovedBandit,
+        ResourceMonopoly,
         Trade,
         Other
     }
 
-    var log = Logger.getLogger(javaClass)
-    var allQuotes = emptyList<Quote>()
-    open fun rollDice(): Pair<Int, Int> {
+    private var allQuotes = emptyList<Quote>()
+    fun observers(consumer: (GameObserver) -> Unit) = admin.observers.forEach { consumer.invoke(it) }
+    open fun rollDice(): DiceRoll {
         assertState(TurnState.Active)
-        val result = admin.rollDice()
+        val roll = NormalDiceRoll()
+        observers { it.playerRolled(player.ref(), roll) }
+        if (roll.sum() == 7) {
+            makePlayersDiscardIfNecessary()
+            log.info("Rolled a 7, move the bandit.")
+            makePlayerMoveBandit(player)
+        } else {
+            giveOutCards(roll.sum())
+        }
         state = TurnState.RolledDice
-        return result
+        return roll
+    }
+
+    private fun giveOutCards(sum: Int) {
+        admin.players.forEach { player ->
+            val cards: List<Card> = board.getCards(sum, player.color !!)
+            if (cards.isNotEmpty()) {
+                player.giveCards(cards)
+            }
+        }
+    }
+
+    protected fun makePlayerMoveBandit(player: Player) {
+        board.tiles.values.find(Hex::hasBandit)?.let { currentBanditHex ->
+            val h = player.moveBandit(currentBanditHex.coords)
+            board.getHex(h).let { moveBandit(it.coords) }
+        }
+    }
+
+    protected  fun makePlayersDiscardIfNecessary() {
+        // Each player must first get rid of half their cards if they more than 7
+        admin.players.forEach { p ->
+            val resourceCards = p.resourceCards()
+            if (resourceCards.size > 7) {
+                val howManyCardsToLose = resourceCards.size / 2
+                val chosenCards = p.selectResourceCards(resourceCards.map { it.resource },
+                        howManyCardsToLose, Admin.SELECT_CARDS_ROLLED_7)
+                if (chosenCards.size != howManyCardsToLose) {
+                    throw RuleException("You did not select the right number of cards. " +
+                            "expected:$howManyCardsToLose found:${chosenCards.size}")
+                }
+                p.takeCards(chosenCards.map(::ResourceCard), Rolled7)
+            }
+        }
     }
 
     /** The list of action cards currently in play. i.e. SoldierCards etc. */
@@ -75,29 +122,18 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
      * Move the bandit to a  tile.
      * This is called by the admin and the soldier card
      */
-    fun moveBandit(_tile: Hex) {
+    fun moveBandit(newLocation: HexCoordinate) {
         //TODO: implement rule checking here so people can't move the bandit whenever they want.
-        board.moveBandit(_tile)
-
-        admin.observers.forEach {
-            it.playerMovedBandit(player.ref(), _tile)
-        }
-
+        board.moveBandit(newLocation)
+        observers { it.playerMovedBandit(player.ref(), newLocation) }
         // Take a card from a player the colors of the cities touching the tile
-        val touchingColors = _tile.nodes_with_cities().map { it.city !!.color }.distinct()
-        val touchingPlayers = touchingColors.map {
-            getPlayer(it) !!.ref()
-        }.filterNot { it == player.ref() }.toList()
-
-        if (! touchingPlayers.isEmpty()) {
-            val playerToTakeFrom: PlayerReference =
-                    if (touchingPlayers.size == 1) {
-                        touchingPlayers.first()
-                    } else {
-                        player.selectPlayer(touchingPlayers, 1)
-                    }
+        val touchingColors = board.getHex(newLocation).nodes.map { it.city?.color }.filterNotNull().distinct()
+        val touchingPlayers = touchingColors.map { getPlayer(it) }.filterNot { it == player }.toList().map(Player::ref)
+        if (touchingPlayers.isNotEmpty()) {
+            val playerToTakeFrom: PlayerReference = touchingPlayers.firstOrNull() ?: player.selectPlayer(
+                    touchingPlayers, 1)
             takeRandomCard(playerToTakeFrom)
-            admin.observers.forEach { it.playerStoleCard(player.ref(), playerToTakeFrom, 1) }
+            observers { it.playerStoleCard(player.ref(), playerToTakeFrom, 1) }
         }
     }
 
@@ -112,12 +148,12 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         val road: Road =
                 if (player.freeRoads() > 0) {
                     player.removeFreeRoads(1)
-                    board.getPiecesForSale(player.color!!).takeRoad()
+                    board.getPiecesForSale(player.color !!).takeRoad()
                 } else {
                     purchaseRoad()
                 }
         board.placeRoad(road, edgeCoordinate)
-        admin.observers.forEach { it.placedRoad(player.ref(), edgeCoordinate) }
+        observers { it.placedRoad(player.ref(), edgeCoordinate) }
         admin.checkForWinner()
     }
 
@@ -125,20 +161,20 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         assertGameIsNotDone()
         assertState(TurnState.RolledDice)
         val edge = board.getEdge(edgeCoordinate)
-        if (! board.getValidRoadSpots(player.color!!).contains(edge)) {
+        if (! board.getValidRoadSpots(player.color !!).contains(edge)) {
             breakRule("Invalid Road Placement $edgeCoordinate")
         }
     }
 
     /** A helper method to get a player based on a color */
-    fun getPlayer(color: String) = admin.getPlayer(color)
+    fun getPlayer(color: String) = admin.getPlayer(color) ?: throw IllegalArgumentException("Unknown player: $color")
 
     open fun placeSettlement(coord: NodeCoordinate): Node {
         assertCanPlaceSettlement(coord)
         val node = board.getNode(coord)
         val sett = purchaseSettlement()
         board.placeCity(sett, coord)
-        admin.observers.forEach { it.placedSettlement(player.ref(), coord) }
+        observers { it.placedSettlement(player.ref(), coord) }
         admin.checkForWinner()
         return node
     }
@@ -147,7 +183,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         assertGameIsNotDone()
         assertState(TurnState.RolledDice)
         val node = board.getNode(coord)
-        if (! board.getValidSettlementSpots(player.color!!).contains(node)) {
+        if (! board.getValidSettlementSpots(player.color !!).contains(node)) {
             breakRule("Invalid Settlement Placement $coord")
         }
     }
@@ -156,9 +192,9 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         assertCanPlaceCity(coord)
         val node = board.getNode(coord)
         val city = purchaseCity()
-        board.getPiecesForSale(player.color!!).putBack(node.city as Settlement)
+        board.getPiecesForSale(player.color !!).putBack(node.city as Settlement)
         board.placeCity(city, coord)
-        admin.observers.forEach { it.placedCity(player.ref(), coord) }
+        observers { it.placedCity(player.ref(), coord) }
         admin.checkForWinner()
         return node
     }
@@ -179,9 +215,9 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         }
     }
 
-    private fun purchaseCity() = board.getPiecesForSale(player.color!!).takeCity().also { payFor(it) }
-    private fun purchaseSettlement() = board.getPiecesForSale(player.color!!).takeSettlement().also { payFor(it) }
-    protected fun purchaseRoad() = board.getPiecesForSale(player.color!!).takeRoad().also { payFor(it) }
+    private fun purchaseCity() = board.getPiecesForSale(player.color !!).takeCity().also { payFor(it) }
+    private fun purchaseSettlement() = board.getPiecesForSale(player.color !!).takeSettlement().also { payFor(it) }
+    protected fun purchaseRoad() = board.getPiecesForSale(player.color !!).takeRoad().also { payFor(it) }
     /**
      * Makes a player pay for a piece
      * Throws an exception if the player doesn't have enough cards,
@@ -192,6 +228,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
             is Settlement -> PurchasedSettlement
             is City -> PurchasedCity
             is Road -> PurchasedRoad
+            is DevelopmentCard -> PurchasedDevelopmentCard
             else -> throw IllegalArgumentException("Unknown piece: $piece")
         }
         player.takeCards(piece.price.map(::ResourceCard), reason)
@@ -226,15 +263,15 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
      * Take a random card from another player and plus it to your own cards
      * If player has no cards, do nothing
      */
-    private fun takeRandomCard(victim: PlayerReference): Unit {
-        val realVictim = getPlayer(victim.color!!) !!
-        if (realVictim.resourceCards().isEmpty()) {
-            log.debug("Could not take a random card from $victim")
-            return
+    private fun takeRandomCard(victimRef: PlayerReference): Unit {
+        val victim = getPlayer(victimRef.color)
+        if (victim.resourceCards().isEmpty()) {
+            log.debug("Could not take a random card from $victimRef")
+        } else {
+            val resource = listOf(victim.resourceCards().pick_random())
+            victim.takeCards(resource, MovedBandit)
+            player.giveCards(resource)
         }
-        val res = realVictim.resourceCards().pick_random()
-        realVictim.takeCards(listOf(res), MovedBandit)
-        player.giveCards(listOf(res))
     }
 
     fun assertRule(condition: Boolean, errorMsg: String) {
@@ -262,7 +299,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
 
     fun acceptQuote(quote: Quote) {
         assertValidQuote(quote)
-        val bidder = quote.bidder?.let { getPlayer(it.color!!) }
+        val bidder = quote.bidder?.let { getPlayer(it.color) }
         val bidderName = bidder?.color ?: "The Bank"
         log.debug("$player is accepting a trade from $bidderName ${quote.giveNum} ${quote.giveType}" +
                 " for ${quote.receiveNum} ${quote.receiveType}")
@@ -288,7 +325,7 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         if (player.countResources(quote.receiveType) < quote.receiveNum) {
             breakRule("You don't have enough cards for this quote: " + quote)
         }
-        val bidder = quote.bidder?.let { getPlayer(it.color!!) }
+        val bidder = quote.bidder?.let { getPlayer(it.color) }
         bidder?.let {
             if (it.countResources(quote.giveType) < quote.giveNum) {
                 breakRule("Bidder $it doesn't have enough cards for this quote: $quote")

@@ -3,63 +3,11 @@ package org.jjk3.player
 import com.google.common.util.concurrent.AtomicLongMap
 import org.apache.log4j.Logger
 import org.jjk3.core.*
-import java.util.*
 import java.util.concurrent.Future
-
-
-enum class GameState(val id: Int, val desc: String, val is_terminal_state: Boolean) {
-
-    Waiting(0, "Waiting for players to join", false),
-    Running(1, "Game is running", false),
-    Finished(2, "Game is over", true),
-    Stalemate(3, "Game ended in a stalemate", true);
-
-    override fun toString() = "<state id=\"$id\" name=\"$name\" />"
-
-}
-
-abstract class UsesGameState {
-    private var game_state: GameState = GameState.Waiting
-    private val state_mutex = Object()
-
-    private var log: Logger = Logger.getLogger(javaClass)
-
-    var state: GameState
-        get() {
-            return synchronized(state_mutex) {
-                game_state
-            }
-        }
-        set(value: GameState) {
-            synchronized(state_mutex) {
-                log.info("Game State is changing to " + value)
-                game_state = value
-            }
-        }
-
-    fun isGameDone(): Boolean = state.is_terminal_state
-    fun isGameWaiting(): Boolean = state == GameState.Waiting
-    fun isGameInProgress(): Boolean = state == GameState.Running
-    /** Assert a state */
-    fun assertState(expectedState: GameState, msg: String = "") {
-        if (state != expectedState)
-            throw  IllegalStateException("Assertion Error: Expected turn state:$expectedState Found:$state. $msg")
-    }
-
-    fun assert_not_state(notExpectedState: GameState, msg: String = "") {
-        if (state == notExpectedState) {
-            throw  IllegalStateException(
-                    "Assertion Error: Turn state was expected to not be :$notExpectedState Found:$state. $msg")
-        }
-    }
-}
 
 class LoggingObserver() : GameObserver {
     val log = Logger.getLogger(LoggingObserver::class.java)
-    override fun playerReceivedCards(player: PlayerReference, cards: List<Card>) {
-    }
-
-    override fun playerRolled(player: PlayerReference, roll: Pair<Int, Int>) {
+    override fun playerRolled(player: PlayerReference, roll: DiceRoll) {
         log.info("$player rolled $roll")
     }
 
@@ -83,7 +31,7 @@ class LoggingObserver() : GameObserver {
         log.debug("$player is starting their turn")
     }
 
-    override fun playerMovedBandit(player: PlayerReference, hex: Hex) {
+    override fun playerMovedBandit(player: PlayerReference, hex: HexCoordinate) {
         log.info("$player moved the bandit to $hex")
     }
 
@@ -113,7 +61,7 @@ class LoggingObserver() : GameObserver {
  * This object oversees the game play and enforces the rules.
  */
 open class Admin(
-        val board: Board,
+        open val board: Board,
         val max_players: Int,
         val max_points: Int = 10,
         val turn_timeout_seconds: Int = 240,
@@ -128,8 +76,8 @@ open class Admin(
 
     val log: Logger = Logger.getLogger(javaClass)
     val MAXIMUM_ROUNDS = 2000
-    var players: List<Player> = emptyList()
-    var observers: List<GameObserver> = emptyList()
+    open var players: List<Player> = emptyList()
+    open var observers: List<GameObserver> = emptyList()
     var available_colors: List<String> = listOf("blue", "red", "white", "orange", "green", "brown")
     var previous_player_with_largest_army: PlayerReference? = null
     var previous_player_with_longest_road: PlayerReference? = null
@@ -137,22 +85,9 @@ open class Admin(
     var times_skipped = AtomicLongMap.create<String>()
 
     var kicked_out: List<Player> = emptyList()
-    var dice_handler: DiceHandler = StandardDiceHandler(this)
     var game_future: Future<Map<PlayerReference, Int>>? = null
     /** All futures used in this admin. */
     var all_futures: List<Future<Any?>> = emptyList()
-
-    /** Returns a list of the two dice rolls */
-    fun rollDice(): Pair<Int, Int> {
-        try {
-            val (die1, die2) = dice_handler.get_dice()
-            return roll_set_dice(Pair(die1.roll(), die2.roll()))
-        } catch (e: Exception) {
-            log.error(e, e)
-            kickOut(currentTurn()!!.player, e)
-            throw e
-        }
-    }
 
     fun currentTurn(): Turn? = current_turn_obj
     protected fun send_observer_msg(o: (GameObserver) -> Unit) {
@@ -164,45 +99,22 @@ open class Admin(
         kicked_out += player
     }
 
-    /** Make the dice roll a specific value */
-    fun roll_set_dice(roll: Pair<Int, Int>): Pair<Int, Int> {
-        if (currentTurn() == null) throw  Exception("rollDice called without a currentTurn")
-        val acting_player = currentTurn()!!.player
-        log.debug("$acting_player rolled " + roll)
-        val sum = roll.first + roll.second
-        send_observer_msg { it.playerRolled(acting_player.ref(), roll) }
-        if (sum == 7) {
-            dice_handler.handle_roll_7(roll)
-        } else {
-            //Give cards to all the players
-            players.forEach { player ->
-                val cards: List<Card> = board.getCards(sum, player.color!!).map { ResourceCard(it) }
-                if (cards.isNotEmpty()) {
-                    player.giveCards(cards)
-                    send_observer_msg { it.playerReceivedCards(player.ref(), cards) }
-                }
-            }
-        }
-        dice_handler.dice_finished(roll)
-        return roll
-    }
-
     /** Get a player based on a color.  Returns null if not found. */
-    fun getPlayer(color: String): Player? = players.find { it.color == color }
+    open fun getPlayer(color: String): Player? = players.find { it.color == color }
 
     /** Register a player or players with this game. */
     open fun register(registrant: Player): Unit {
-        if (!isGameInProgress()) {
+        if (! isGameInProgress()) {
             registrant.updateBoard(board)
             if (isGameWaiting()) {
-                if (registrant is HasColorPreference){
+                if (registrant is HasColorPreference) {
                     val preferred_color = registrant.preferredColor
                     if (preferred_color != null && available_colors.contains(preferred_color)) {
                         registrant.color = preferred_color
                         available_colors -= preferred_color
                     }
                 }
-                if (registrant.color == null){
+                if (registrant.color == null) {
                     val (chosen_color, _available_colors) = available_colors.remove_random()
                     available_colors = _available_colors
                     registrant.color = chosen_color
@@ -228,16 +140,16 @@ open class Admin(
         log.debug("Checking for stalemate")
         players.forEach { player ->
             val color = player.color
-            val piecesForSale = board.getPiecesForSale(color!!)
-            val settlementSpots = board.getValidSettlementSpots(color!!)
+            val piecesForSale = board.getPiecesForSale(color !!)
+            val settlementSpots = board.getValidSettlementSpots(color !!)
             if (Math.min(settlementSpots.size, piecesForSale.settlements.size()) > 0) {
                 return false
             }
-            val citySpots = board.getValidCitySpots(color!!).size
+            val citySpots = board.getValidCitySpots(color !!).size
             if (Math.min(citySpots, piecesForSale.cities.size()) > 0) {
                 return false
             }
-            val roadSpots = board.getValidRoadSpots(color!!).size
+            val roadSpots = board.getValidRoadSpots(color !!).size
             if (Math.min(roadSpots, piecesForSale.roads.size()) > 0) {
                 return false
             }
@@ -250,8 +162,8 @@ open class Admin(
     /** Get the score of the given player */
     fun getScore(player: Player): Int {
         var score = 0
-        getPlayer(player.color!!)?.let { p ->
-            if (board.hasLongestRoad(p.color!!)) {
+        getPlayer(player.color !!)?.let { p ->
+            if (board.hasLongestRoad(p.color !!)) {
                 score += 2
             }
             who_has_largest_army()?.let { largestArmy ->
@@ -260,8 +172,8 @@ open class Admin(
                 }
             }
             board.allNodes().forEach { n ->
-                if (n.hasCity() && n.city!!.color == p.color) {
-                    score += n.city!!.points
+                if (n.hasCity() && n.city !!.color == p.color) {
+                    score += n.city !!.points
                 }
             }
         }
@@ -270,13 +182,15 @@ open class Admin(
 
     fun getScores() = players.map { p: Player -> Pair(p.ref(), getScore(p)) }.toMap()
     fun countResourceCards(playerReference: PlayerReference): Int {
-        val player: Player = getPlayer(playerReference.color!!) ?: throw  IllegalArgumentException(
+        val player: Player = getPlayer(playerReference.color !!) ?: throw  IllegalArgumentException(
                 "Could not find player , color:${playerReference.color} in $players")
         return Resource.values().map { player.countResources(it) }.sum()
     }
 
     fun countAllResourceCards() = players.map { p -> listOf(p.ref(), countResourceCards(p.ref())) }
-    fun countDevelopmentCards(playerReference: PlayerReference) = getPlayer(playerReference.color!!)?.countDevelopmentCards()
+    fun countDevelopmentCards(playerReference: PlayerReference) = getPlayer(
+            playerReference.color !!)?.countDevelopmentCards()
+
     /** Finds the player , the largest army, or nil if no one has it. */
     fun who_has_largest_army(): PlayerReference? {
         //The largest randomNumber of soldier cards
@@ -330,7 +244,7 @@ open class Admin(
     }
 
     /** returns the player infos that have the longest road */
-    fun whoHasLongestRoad(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color!!) }?.ref()
+    fun whoHasLongestRoad(): PlayerReference? = players.find { p -> board.hasLongestRoad(p.color !!) }?.ref()
 
     private fun checkForLongestRoad() {
         whoHasLongestRoad()?.let { p ->
@@ -343,7 +257,7 @@ open class Admin(
 
     fun validateQuote(quote: Quote): Unit {
         if (quote.bidder != null) {
-            val player = getPlayer(quote.bidder.color!!)!!
+            val player = getPlayer(quote.bidder.color !!) !!
             if (player.countResources(quote.giveType) < quote.giveNum) {
                 throw IllegalStateException(
                         "Bidder $quote.bidder does not have enough resources for this quote:${this} " +
@@ -357,7 +271,7 @@ open class Admin(
     * Optionally takes a block that iterates through each quote as they come
     * [player] The player asking for quotes
     */
-    fun getQuotes(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
+    open fun getQuotes(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
         var result = getQuotesFromBank(player, wantList, giveList)
 
         //Add user quotes
@@ -386,10 +300,10 @@ open class Admin(
         wantList.forEach { w: Resource ->
             giveList.forEach { g: Resource ->
                 result += Quote(null, g, 4, w, 1)
-                board.getPorts(player.color!!).forEach { p: Port ->
+                board.getPorts(player.color !!).forEach { p: Port ->
                     if ((p.kind != null && p.kind == g) || p.kind == null) {
                         val quote = Quote(null, g, p.rate, w, 1)
-                        if (!result.contains(quote)) {
+                        if (! result.contains(quote)) {
                             result += quote
                         }
                     }
@@ -412,7 +326,7 @@ open class Admin(
      */
     open fun giveTurn(turn: Turn, player: Player): Turn {
         //We need to check for the winner before we give the next player a turn
-        if (!isGameDone()) {
+        if (! isGameDone()) {
             log.debug("**Giving $turn to $player")
             current_turn_obj = turn
 
@@ -422,11 +336,11 @@ open class Admin(
                 turn.state = TurnState.Active
                 observers.forEach { it.getTurn(player.ref(), turn.javaClass) }
                 player.takeTurn(turn)
-                if (!turn.isDone()) {
+                if (! turn.isDone()) {
                     log.warn("Turn SHOULD BE DONE.  it's:${turn.state}    $player   $turn")
                 }
                 Util.while_with_timeout(turn_timeout_seconds * 1000L) {
-                    !turn.state.is_terminal_state
+                    ! turn.state.is_terminal_state
                 }
                 log.debug("Turn finished , state:" + currentTurn()?.state)
             } catch(e: Exception) {
@@ -457,10 +371,10 @@ open class Admin(
             for (p in players + players.reversed()) {
                 giveSetupTurn(p).forceDone()
             }
-            while (!isGameDone()) {
+            while (! isGameDone()) {
                 roundCount += 1
                 for (p in players) {
-                    if (!checkForWinner()) {
+                    if (! checkForWinner()) {
                         giveNormalTurn(p).forceDone()
                     }
                 }
@@ -471,7 +385,7 @@ open class Admin(
                     log.error("Too many rounds have occurred: $roundCount. Effective Stalemate")
                     state = GameState.Stalemate
                 }
-                if (!isGameDone()) {
+                if (! isGameDone()) {
                     checkForStalemate()
                 }
             }
@@ -537,60 +451,3 @@ open class Admin(
   }
 */
 
-/** Represents a single die */
-abstract class Die {
-    abstract fun roll(): Int
-}
-
-object NormalDie : Die() {
-    val r: Random = Random()
-    override fun roll(): Int = r.nextInt(5) + 1
-}
-
-interface DiceHandler {
-    fun get_dice(): Pair<Die, Die>
-    fun handle_roll_7(roll: Pair<Int, Int>)
-    fun dice_finished(roll: Pair<Int, Int>)
-}
-
-class StandardDiceHandler(val admin: Admin) : DiceHandler {
-    val log = Logger.getLogger(javaClass)
-    override fun get_dice(): Pair<Die, Die> {
-        return Pair(NormalDie, NormalDie)
-    }
-
-    override fun dice_finished(roll: Pair<Int, Int>) {
-
-    }
-
-    override fun handle_roll_7(roll: Pair<Int, Int>) {
-        //Each player must first get rid of half their cards if they more than 7
-        admin.players.forEach { p ->
-            try {
-                if (p.resourceCards().size > 7) {
-                    val how_many_cards_to_lose = p.resourceCards().size / 2
-                    val chosen_cards = p.selectResourceCards(p.resourceCards().map { it.resource },
-                            how_many_cards_to_lose,
-                            Admin.SELECT_CARDS_ROLLED_7)
-                    if (chosen_cards.size != how_many_cards_to_lose)
-                        throw  RuleException(
-                                "You did not select the right randomNumber of cards. expected:$how_many_cards_to_lose found:${chosen_cards.size}")
-                    p.takeCards(chosen_cards.map(::ResourceCard), Turn.ReasonToTakeCards.Rolled7)
-                }
-            } catch (re: RuleException) {
-                log.error("REPLACING PLAYER WITH BOT: " + p, re)
-                admin.kickOut(p, re)
-            }
-        }
-
-        //Then move the bandit
-        log.info("Rolled a 7, move the bandit.")
-        admin.board.tiles.values.find { it.has_bandit }?.let { current_bandit_hex ->
-            val _hex = admin.currentTurn()!!.player.moveBandit(current_bandit_hex)
-            admin.board.getHex(_hex.coords).let { local_hex ->
-                admin.currentTurn()!!.moveBandit(local_hex)
-            }
-        }
-    }
-
-}

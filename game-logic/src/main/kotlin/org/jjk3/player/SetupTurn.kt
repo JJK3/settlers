@@ -67,7 +67,7 @@ class SetupTurn(admin: Admin, player: Player, board: Board) : Turn(admin, player
         log.debug("Turn done")
     }
 
-    override fun rollDice(): Pair<Int, Int> {
+    override fun rollDice(): DiceRoll {
         throw RuleException("Cannot roll dice during setup")
     }
 

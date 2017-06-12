@@ -122,15 +122,15 @@ class NodeTest2 {
 
     @Test fun testNodeHexes() {
         var board = StandardBoard()
-        assertEquals(1, board.getNode(NodeCoordinate(0, 0, 0))!!.hexes.size)
-        assertEquals(2, board.getNode(NodeCoordinate(0, 0, 1))!!.hexes.size)
-        assertEquals(3, board.getNode(NodeCoordinate(1, 1, 1))!!.hexes.size)
-        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 0))!!.hexes.size)
-        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 1))!!.hexes.size)
-        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 2))!!.hexes.size)
-        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 3))!!.hexes.size)
-        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 4))!!.hexes.size)
-        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 5))!!.hexes.size)
+        assertEquals(1, board.getNode(NodeCoordinate(0, 0, 0)) !!.hexes.size)
+        assertEquals(2, board.getNode(NodeCoordinate(0, 0, 1)) !!.hexes.size)
+        assertEquals(3, board.getNode(NodeCoordinate(1, 1, 1)) !!.hexes.size)
+        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 0)) !!.hexes.size)
+        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 1)) !!.hexes.size)
+        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 2)) !!.hexes.size)
+        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 3)) !!.hexes.size)
+        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 4)) !!.hexes.size)
+        assertEquals(3, board.getNode(NodeCoordinate(0, 1, 5)) !!.hexes.size)
     }
 
     /* Hexes and edges should share the same nodes. */
@@ -187,11 +187,11 @@ class HexTest2 {
     @Test fun testDirections() {
         var hex = Hex(Resource.Brick, 8)
         hex.coords = HexCoordinate(0, 0)
-        assertEquals(hex.coords.up(), HexCoordinate(0, -1))
-        assertEquals(hex.coords.right_up(), HexCoordinate(1, -1))
+        assertEquals(hex.coords.up(), HexCoordinate(0, - 1))
+        assertEquals(hex.coords.right_up(), HexCoordinate(1, - 1))
         assertEquals(hex.coords.right_down(), HexCoordinate(1, 0))
-        assertEquals(hex.coords.left_up(), HexCoordinate(-1, -1))
-        assertEquals(hex.coords.left_down(), HexCoordinate(-1, 0))
+        assertEquals(hex.coords.left_up(), HexCoordinate(- 1, - 1))
+        assertEquals(hex.coords.left_down(), HexCoordinate(- 1, 0))
         assertEquals(hex.coords.down(), HexCoordinate(0, 1))
 
         hex.coords = HexCoordinate(1, 1)
@@ -202,20 +202,20 @@ class HexTest2 {
         assertEquals(hex.coords.left_down(), HexCoordinate(0, 2))
         assertEquals(hex.coords.down(), HexCoordinate(1, 2))
 
-        hex.coords = HexCoordinate(-1, 0)
-        assertEquals(hex.coords.up(), HexCoordinate(-1, -1))
+        hex.coords = HexCoordinate(- 1, 0)
+        assertEquals(hex.coords.up(), HexCoordinate(- 1, - 1))
         assertEquals(hex.coords.right_up(), HexCoordinate(0, 0))
         assertEquals(hex.coords.right_down(), HexCoordinate(0, 1))
-        assertEquals(hex.coords.left_up(), HexCoordinate(-2, 0))
-        assertEquals(hex.coords.left_down(), HexCoordinate(-2, 1))
-        assertEquals(hex.coords.down(), HexCoordinate(-1, 1))
+        assertEquals(hex.coords.left_up(), HexCoordinate(- 2, 0))
+        assertEquals(hex.coords.left_down(), HexCoordinate(- 2, 1))
+        assertEquals(hex.coords.down(), HexCoordinate(- 1, 1))
     }
 }
 
 class MiniBoard : Board() {
     init {
         var tileBag = TileBag.newBag()
-        var coords = listOf(HexCoordinate(0, 0), HexCoordinate(0, 1), HexCoordinate(-1, 0), HexCoordinate(-1, 1))
+        var coords = listOf(HexCoordinate(0, 0), HexCoordinate(0, 1), HexCoordinate(- 1, 0), HexCoordinate(- 1, 1))
         for (c in coords) {
             val (newBag, hex) = tileBag.removeRandom()
             tileBag = newBag
@@ -253,7 +253,7 @@ class BoardTest {
         assertEquals(board.getHex(HexCoordinate(0, 0)).edges[3].coords(),
                 board.getHex(org.jjk3.core.HexCoordinate(0, 1)).edges[0].coords())
         assertEquals(board.getHex(HexCoordinate(0, 0)).edges[4].coords(),
-                board.getHex(org.jjk3.core.HexCoordinate(-1, 0)).edges[1].coords())
+                board.getHex(org.jjk3.core.HexCoordinate(- 1, 0)).edges[1].coords())
         check_opposing_edges(board)
     }
 
@@ -267,32 +267,32 @@ class BoardTest {
         board.placeRoad(Road("blue"), EdgeCoordinate(1, 1, 0))
         board.placeRoad(Road("red"), EdgeCoordinate(0, 2, 3))
         board.placeRoad(Road("red"), EdgeCoordinate(0, 2, 4))
-        assertEquals(board.getLongestRoad(board.getEdge(EdgeCoordinate(0, 2, 4))!!).size, 5)
+        assertEquals(board.getLongestRoad(board.getEdge(EdgeCoordinate(0, 2, 4)) !!).size, 5)
         assertTrue(board.hasLongestRoad("red"))
-        assertTrue((!board.hasLongestRoad("blue")))
+        assertTrue((! board.hasLongestRoad("blue")))
 
         var e5 = board.placeRoad(Road("orange"), EdgeCoordinate(0, 0, 0))
         board.placeRoad(Road("orange"), EdgeCoordinate(0, 0, 5))
-        board.placeRoad(Road("orange"), EdgeCoordinate(-1, 0, 0))
-        board.placeRoad(Road("orange"), EdgeCoordinate(-1, 0, 5))
-        board.placeRoad(Road("orange"), EdgeCoordinate(-1, 0, 4))
-        assertTrue((!board.hasLongestRoad("red")))
-        assertTrue((!board.hasLongestRoad("blue")))
-        assertTrue((!board.hasLongestRoad("orange")))
+        board.placeRoad(Road("orange"), EdgeCoordinate(- 1, 0, 0))
+        board.placeRoad(Road("orange"), EdgeCoordinate(- 1, 0, 5))
+        board.placeRoad(Road("orange"), EdgeCoordinate(- 1, 0, 4))
+        assertTrue((! board.hasLongestRoad("red")))
+        assertTrue((! board.hasLongestRoad("blue")))
+        assertTrue((! board.hasLongestRoad("orange")))
 
-        board.placeRoad(Road("orange"), EdgeCoordinate(-1, 0, 1))
+        board.placeRoad(Road("orange"), EdgeCoordinate(- 1, 0, 1))
         var count = board.getLongestRoad(e5).size
         assertEquals(count, 5)
-        assertTrue((!board.hasLongestRoad("red")))
-        assertTrue((!board.hasLongestRoad("blue")))
-        assertTrue((!board.hasLongestRoad("orange")))
+        assertTrue((! board.hasLongestRoad("red")))
+        assertTrue((! board.hasLongestRoad("blue")))
+        assertTrue((! board.hasLongestRoad("orange")))
 
-        board.placeRoad(Road("orange"), EdgeCoordinate(-1, 0, 3))
+        board.placeRoad(Road("orange"), EdgeCoordinate(- 1, 0, 3))
         count = board.getLongestRoad(e5).size
         assertEquals(count, 6)
         assertTrue(board.hasLongestRoad("orange"))
 
-        board.placeRoad(Road("orange"), EdgeCoordinate(-1, 0, 2))
+        board.placeRoad(Road("orange"), EdgeCoordinate(- 1, 0, 2))
         count = board.getLongestRoad(e5).size
         assertEquals(count, 8)
         assertTrue(board.hasLongestRoad("orange"))
@@ -300,11 +300,11 @@ class BoardTest {
 
     // test that cities and settlements produce the right cards.
     @Test fun testGetCards() {
-        var board = StandardBoard()
+        val board = StandardBoard()
         board.tiles.values.forEach { it.number = 12 }
 
-        var tile = board.getHex(HexCoordinate(0, 0))
-        tile.has_bandit = false
+        val tile = board.tiles.values.filter { it.resource != null }.first()
+        tile.hasBandit = false
         tile.number = 5
         tile.nodes[0].city = City("red")
         tile.nodes[5].city = Settlement("blue")
@@ -323,7 +323,7 @@ class BoardTest {
     @Test fun testGetCardsWithBandit() {
         var board = StandardBoard()
         var tile = board.getHex(HexCoordinate(0, 0))
-        tile.has_bandit = true
+        tile.hasBandit = true
         tile.number = 5
         tile.nodes[0].city = City("red")
         tile.nodes[5].city = Settlement("blue")
@@ -396,7 +396,7 @@ class BoardTest {
         for (t in board.tiles.values) {
             for (e in t.edges) {
                 for (n in e.nodes()) {
-                    if (!ns.contains(n))
+                    if (! ns.contains(n))
                         ns = ns + n
                 }
             }
@@ -408,10 +408,10 @@ class BoardTest {
         var portNodes: List<Node> = emptyList()
         board.tiles.values.forEach { t ->
             t.nodes.forEach { n ->
-                if (n.hasPort() && !portNodes.contains(n)) {
+                if (n.hasPort() && ! portNodes.contains(n)) {
                     portNodes = portNodes + n
                 }
-                if (!nodes.contains(n)) {
+                if (! nodes.contains(n)) {
                     nodes = nodes + n
                 }
             }
@@ -435,7 +435,7 @@ class BoardTest {
     //A Board must have the bandit on it by funault.  ONLY one
     @Test fun testHasBandit() {
         var board = StandardBoard()
-        var bandit_hex = board.tiles.values.filter { it.has_bandit }
+        var bandit_hex = board.tiles.values.filter { it.hasBandit }
         assertEquals(bandit_hex.size, 1)
     }
 

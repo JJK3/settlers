@@ -51,16 +51,15 @@ class PlayerTest {
     }
 
     @Test
-    fun playDevelopmentCard(){
+    fun playDevelopmentCard() {
         player.playedDevCard(VictoryPointCard())
         assertEquals(player.getExtraVictoryPoints(), 1)
     }
 
-
     @Test
     fun canAfford() {
         player.giveCards(listOf(ResourceCard(Resource.Brick), ResourceCard(Resource.Wood)))
-        assertTrue(player.canAfford(listOf(Road(player.color!!))))
+        assertTrue(player.canAfford(listOf(Road(player.color !!))))
     }
 
     @Test
@@ -80,8 +79,13 @@ class PlayerTest {
 
 }
 
-class MockPlayer() : Player() {
-    override fun moveBandit(old_hex: Hex): Hex {
+open class MockPlayer() : Player() {
+    constructor(color: String) : this() {
+        this.color = color
+    }
+
+
+    override fun moveBandit(oldLocation: HexCoordinate): HexCoordinate {
         TODO("not implemented")
     }
 

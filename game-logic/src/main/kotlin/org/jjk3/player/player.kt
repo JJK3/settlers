@@ -17,7 +17,7 @@ class BoardObserver : GameObserver {
         this.board = board.copy()
     }
 
-    override fun playerMovedBandit(player: PlayerReference, hex: Hex) {
+    override fun playerMovedBandit(player: PlayerReference, hex: HexCoordinate) {
         board?.moveBandit(hex)
     }
 
@@ -108,7 +108,7 @@ abstract class Player(val boardObserver: BoardObserver = BoardObserver()) : Game
      * return a  hex
      * This method should be overridden
      */
-    abstract fun moveBandit(old_hex: Hex): Hex
+    abstract fun moveBandit(oldLocation: HexCoordinate): HexCoordinate
 
     /**
      * Ask the player to select some cards from a list.

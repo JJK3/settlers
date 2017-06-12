@@ -1,5 +1,7 @@
 package org.jjk3.core
 
+import java.util.*
+
 interface Purchaseable {
     val price: List<Resource>
 }
@@ -40,3 +42,12 @@ enum class Resource {
     Ore, Wood, Sheep, Brick, Wheat
 }
 
+interface DiceRoll{
+    fun sum() : Int
+}
+class NormalDiceRoll : DiceRoll {
+    val r: Random = Random()
+    val die1 = r.nextInt(5) + 1
+    val die2 = r.nextInt(5) + 1
+    override fun sum() = die1 + die2
+}

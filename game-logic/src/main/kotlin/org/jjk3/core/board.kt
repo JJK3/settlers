@@ -16,10 +16,10 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     val tiles = HashMap<HexCoordinate, Hex>()
-    var developmentCards = DevelopmentCardBag.create()
+    open var developmentCards = DevelopmentCardBag.create()
     val piecesForSale = ConcurrentHashMap<String, PiecesForSale>()
     private val longestRoadAuthority = LongestRoadDetector(this)
-    fun allNodes(): Set<Node> = tiles.values.flatMap { it.nodes.toList() }.toSet()
+    open fun allNodes(): Set<Node> = tiles.values.flatMap { it.nodes.toList() }.toSet()
     fun allEdges() = tiles.values.flatMap { it.edges.toList() }.toSet()
     fun copy(): Board {
         val b = Board(should_enforce_bandit)
@@ -32,7 +32,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     fun getPiecesForSale(color: String) = piecesForSale[color] ?: throw IllegalArgumentException(
             "Color not found: $color")
 
-    fun getHex(coord: HexCoordinate): Hex = getHexOrNull(coord) ?: throw IllegalArgumentException(
+    open fun getHex(coord: HexCoordinate): Hex = getHexOrNull(coord) ?: throw IllegalArgumentException(
             "Hex not found: $coord")
 
     fun getHexOrNull(coord: HexCoordinate): Hex? = tiles[coord]
@@ -65,19 +65,19 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     fun getPorts(color: String): List<Port> = portNodes(color).map(Node::port).filterNotNull().toList()
 
     /** Gets a list of cards, that the given player should receive */
-    fun getCards(number: Int, color: String): List<Resource> {
+    open fun getCards(number: Int, color: String): List<ResourceCard> {
         val valid_hexes = tiles.values.filter { t ->
-            t.number == number && ! t.has_bandit && t.resource != null
+            t.number == number && ! t.hasBandit && t.resource != null
         }
         return valid_hexes.flatMap { hex ->
-            hex.nodes_with_cities(color).flatMap { n ->
+            hex.nodesWithCities(color).flatMap { n ->
                 when (n.city) {
                     is Settlement -> listOf(hex.get_card())
                     is City -> hex.get_2_cards()
                     else -> emptyList()
                 }
             }
-        }.toList()
+        }.toList().map(::ResourceCard)
     }
 
     fun placeRoad(road: Road, edgeCoordinate: EdgeCoordinate): Edge =
@@ -98,8 +98,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
             }
 
     /**
-     * Called ONLY by a Turn object, this method mutates the org.jjk3.board by placing a
-     * City or Settlement on it.
+     * Mutates the board by placing a City or Settlement on it.
      */
     fun placeCity(city: City, coord: NodeCoordinate): Node {
         synchronized(this) {
@@ -111,20 +110,20 @@ open class Board(val should_enforce_bandit: Boolean = true) {
 
     fun placeBanditOnDesert() = setBandit(findDesert() ?: throw IllegalStateException("Cannot find desert hex"))
     private fun findDesert() = tiles.values.find { it.resource == null }
-    private fun setBandit(hex: Hex) = tiles.values.forEach { it.has_bandit = (it == hex) }
+    private fun setBandit(hex: Hex) = tiles.values.forEach { it.hasBandit = (it == hex) }
     /**
      * Move the bandit to a  hex
      * @return the old hex that the bandit was on.
      */
-    fun moveBandit(hex: Hex): Hex {
+    open fun moveBandit(newLocation: HexCoordinate): Hex {
         synchronized(this) {
-            val currentBanditHex = tiles.values.find(Hex::has_bandit) ?: throw RuleException(
+            val currentBanditHex = tiles.values.find(Hex::hasBandit) ?: throw RuleException(
                     "Board does not currently have a bandit ${this}")
 
-            if (currentBanditHex == hex) {
+            if (currentBanditHex.coords == newLocation) {
                 throw RuleException("Bandit cannot be moved to the Tile it's already on")
             }
-            val tile = getHex(hex.coords)
+            val tile = getHex(newLocation)
             setBandit(tile)
             return currentBanditHex
         }
