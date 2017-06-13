@@ -84,22 +84,21 @@ open class MockPlayer() : Player() {
         this.color = color
     }
 
-
     override fun moveBandit(oldLocation: HexCoordinate): HexCoordinate {
-        TODO("not implemented")
+        return HexCoordinate(5, 5)
     }
 
     override fun selectResourceCards(cards: List<Resource>, count: Int, reason: Int): List<Resource> {
-        TODO("not implemented")
+        return emptyList()
     }
 
     override fun selectPlayer(players: List<PlayerReference>, reason: Int): PlayerReference {
-        TODO("not implemented")
+        return ref()
     }
 
     override fun getUserQuotes(player_reference: PlayerReference, wantList: List<Resource>,
                                giveList: List<Resource>): List<Quote> {
-        TODO("not implemented")
+        return emptyList()
     }
 
 }

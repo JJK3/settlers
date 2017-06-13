@@ -7,6 +7,7 @@ import org.jjk3.core.Resource.*
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Matchers
 import org.mockito.Mockito.*
 
 class TurnTest {
@@ -25,26 +26,59 @@ class TurnTest {
         otherPlayer = spy(MockPlayer())
         otherPlayer.color = "blue"
         board = mock(Board::class.java)
-        turn = Turn(admin, player, board)
+        turn = spy(Turn(admin, player, board))
         turn.state = TurnState.Active
         observer = mock(GameObserver::class.java)
+        `when`(admin.getPlayer("red")).thenReturn(player)
+        `when`(admin.getPlayer("blue")).thenReturn(otherPlayer)
+        `when`(admin.state).thenReturn(UsesGameState.GameState.Running)
         `when`(admin.observers).thenReturn(listOf(observer))
         `when`(admin.board).thenReturn(board)
         `when`(board.developmentCards).thenReturn(DevelopmentCardBag.create())
         `when`(admin.players).thenReturn(listOf(player))
+        val piecesForSale = PiecesForSale(player.color !!)
+        `when`(board.getPiecesForSale(player.color !!)).thenReturn(piecesForSale)
         `when`(board.getCards(anyInt(), matches("red"))).thenReturn(
                 listOf(ResourceCard(Brick)))
+        `when`(board.hasLongestRoad(Matchers.anyString())).thenReturn(false)
     }
+
+    class FixedDice(override val die1: Int, override val die2: Int) : NormalDiceRoll()
 
     @Test
     fun rollDice() {
-        val rollDice = turn.rollDice()
+        `when`(turn.getDiceRoll()).thenReturn(FixedDice(4, 5))
+        turn.rollDice()
         assertEquals(turn.state, TurnState.RolledDice)
-        if (rollDice.sum() == 7) {
-            verify(player).moveBandit(any(HexCoordinate::class.java))
-        } else {
-            verify(player).giveCards(listOf(ResourceCard(Brick)))
-        }
+        verify(player).giveCards(listOf(ResourceCard(Brick)))
+    }
+
+    @Test
+    fun rollDiceWithMovingTheBandit() {
+        `when`(turn.getDiceRoll()).thenReturn(FixedDice(4, 3))
+        val oldCoords = HexCoordinate(0, 0)
+        val hex = Hex(null, 4, oldCoords)
+        hex.hasBandit = true
+        `when`(board.findBandit()).thenReturn(hex)
+        val newCoords = HexCoordinate(0, 1)
+        `when`(player.moveBandit(hex.coords)).thenReturn(newCoords)
+        `when`(board.getHex(newCoords)).thenReturn(Hex(Brick, 3, newCoords))
+        turn.rollDice()
+        assertEquals(turn.state, TurnState.RolledDice)
+        verify(player).moveBandit(oldCoords)
+    }
+
+    @Test
+    fun rollDiceWithMovingWithDiscarding() {
+        val cards = (1..9).map { ResourceCard(Brick) }
+        player.giveCards(cards)
+        `when`(turn.getDiceRoll()).thenReturn(FixedDice(4, 3))
+        `when`(board.findBandit()).thenReturn(null)
+        `when`(player.selectResourceCards(cards.map { it.resource }, 4, Admin.SELECT_CARDS_ROLLED_7)).thenReturn(
+                (1..4).map { Brick })
+        turn.rollDice()
+        assertEquals(turn.state, TurnState.RolledDice)
+        assertEquals(player.resourceCards(), (1..5).map { ResourceCard(Brick) })
     }
 
     @Test(expected = IllegalStateException::class)
@@ -106,69 +140,86 @@ class TurnTest {
     fun moveBandit() {
         val hex = Hex(Brick, 5, HexCoordinate(0, 0))
         hex.hasBandit = true
-        hex.node(NodeNumber(3)).city = City("red")
-        val player1 = MockPlayer("red")
-        player1.giveCards(listOf(ResourceCard(Brick)))
-        `when`(admin.getPlayer("red")).thenReturn(player1)
+        hex.node(NodeNumber(3)).city = City(otherPlayer.color !!)
+        otherPlayer.giveCards(listOf(ResourceCard(Brick)))
         `when`(board.getHex(hex.coords)).thenReturn(hex)
         turn.moveBandit(hex.coords)
-        assertTrue(player1.resourceCards().isEmpty())
-    }
-
-    @Test
-    fun receivedQuote() {
+        assertTrue(otherPlayer.resourceCards().isEmpty())
     }
 
     @Test
     fun placeRoad() {
+        turn.state = TurnState.RolledDice
+        player.giveCards(listOf(ResourceCard(Brick), ResourceCard(Wood)))
+        val edgeCoord = EdgeCoordinate(0, 0, 3)
+        val edge = Edge()
+        `when`(board.getValidRoadSpots(player.color !!)).thenReturn(listOf(edge))
+        `when`(board.getEdge(edgeCoord)).thenReturn(edge)
+        turn.placeRoad(edgeCoord)
+        verify(board).placeRoad(Road(player.color !!), edgeCoord)
+        assertTrue(player.resourceCards().isEmpty())
     }
 
     @Test
     fun placeSettlement() {
-    }
-
-    @Test
-    fun assertCanPlaceSettlement() {
+        turn.state = TurnState.RolledDice
+        player.giveCards(listOf(Brick, Wood, Sheep, Wheat).map(::ResourceCard))
+        val coord = NodeCoordinate(0, 0, 4)
+        val node = Node()
+        `when`(board.getValidSettlementSpots(player.color !!)).thenReturn(listOf(node))
+        `when`(board.getNode(coord)).thenReturn(node)
+        turn.placeSettlement(coord)
+        verify(board).placeCity(Settlement(player.color !!), coord)
+        assertTrue(player.resourceCards().isEmpty())
     }
 
     @Test
     fun placeCity() {
-    }
-
-    @Test
-    fun assertGameIsNotDone() {
-    }
-
-    @Test
-    fun purchaseRoad() {
-    }
-
-    @Test
-    fun payFor() {
+        turn.state = TurnState.RolledDice
+        player.giveCards(listOf(Wheat, Wheat, Ore, Ore, Ore).map(::ResourceCard))
+        val coord = NodeCoordinate(0, 0, 4)
+        val node = Node()
+        node.city = Settlement(player.color !!)
+        `when`(board.getValidCitySpots(player.color !!)).thenReturn(listOf(node))
+        `when`(board.getNode(coord)).thenReturn(node)
+        turn.placeCity(coord)
+        verify(board).placeCity(City(player.color !!), coord)
+        assertTrue(player.resourceCards().isEmpty())
     }
 
     @Test
     fun done() {
+        turn.state = TurnState.RolledDice
+        turn.done()
     }
 
     @Test
     fun forceDone() {
-    }
-
-    @Test
-    fun validateQuoteLists() {
-    }
-
-    @Test
-    fun assertRule() {
+        turn.forceDone()
     }
 
     @Test
     fun playDevelopmentCard() {
+        turn.state = TurnState.RolledDice
+        val card = VictoryPointCard()
+        player.giveCards(listOf(card))
+        turn.playDevelopmentCard(card)
+        verify(player).playedDevCard(card)
     }
 
     @Test
     fun acceptQuote() {
+        turn.state = TurnState.RolledDice
+        val have = listOf(Wheat)
+        val want = listOf(Brick)
+        player.giveCards(have.map(::ResourceCard))
+        otherPlayer.giveCards(want.map(::ResourceCard))
+        val quote = Quote(otherPlayer.ref(), Wheat, 1, Brick, 1)
+        `when`(admin.getQuotes(player, want, have)).thenReturn(listOf(quote))
+        turn.getQuotes(want, have)
+        turn.acceptQuote(quote)
+        assertEquals(player.resourceCards(), listOf(ResourceCard(Brick)))
+        assertEquals(otherPlayer.resourceCards(), listOf(ResourceCard(Wheat)))
     }
 
 }

@@ -29,15 +29,15 @@ open class Board(val should_enforce_bandit: Boolean = true) {
         return b
     }
 
-    fun getPiecesForSale(color: String) = piecesForSale[color] ?: throw IllegalArgumentException(
+    open fun getPiecesForSale(color: String) = piecesForSale[color] ?: throw IllegalArgumentException(
             "Color not found: $color")
 
     open fun getHex(coord: HexCoordinate): Hex = getHexOrNull(coord) ?: throw IllegalArgumentException(
             "Hex not found: $coord")
 
     fun getHexOrNull(coord: HexCoordinate): Hex? = tiles[coord]
-    fun getNode(coord: NodeCoordinate): Node = getHex(coord.hex).node(coord.nodeNumber)
-    fun getEdge(coord: EdgeCoordinate): Edge = getHex(coord.hex).edge(coord.edgeNumber)
+    open fun getNode(coord: NodeCoordinate): Node = getHex(coord.hex).node(coord.nodeNumber)
+    open fun getEdge(coord: EdgeCoordinate): Edge = getHex(coord.hex).edge(coord.edgeNumber)
     /**
      * Get all complete roads.
      * @return A list of complete roads, where a complete road is represented by a set of edges
@@ -55,7 +55,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     /** Does the given player have longest road. */
-    fun hasLongestRoad(color: String): Boolean = longestRoadAuthority.hasLongestRoad(color)
+    open fun hasLongestRoad(color: String): Boolean = longestRoadAuthority.hasLongestRoad(color)
 
     fun getLongestRoad(edge: Edge): List<Edge> = longestRoadAuthority.getLongestRoad(edge)
     /** Port nodes controlled by the given player. */
@@ -80,7 +80,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
         }.toList().map(::ResourceCard)
     }
 
-    fun placeRoad(road: Road, edgeCoordinate: EdgeCoordinate): Edge =
+    open fun placeRoad(road: Road, edgeCoordinate: EdgeCoordinate): Edge =
             synchronized(this) {
                 getEdge(edgeCoordinate).let {
                     it.road = road
@@ -100,7 +100,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     /**
      * Mutates the board by placing a City or Settlement on it.
      */
-    fun placeCity(city: City, coord: NodeCoordinate): Node {
+    open fun placeCity(city: City, coord: NodeCoordinate): Node {
         synchronized(this) {
             val node = getNode(coord)
             node.city = city
@@ -109,7 +109,8 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     fun placeBanditOnDesert() = setBandit(findDesert() ?: throw IllegalStateException("Cannot find desert hex"))
-    private fun findDesert() = tiles.values.find { it.resource == null }
+    private fun findDesert(): Hex? = tiles.values.find { it.resource == null }
+    open fun findBandit(): Hex? = tiles.values.find { it.hasBandit }
     private fun setBandit(hex: Hex) = tiles.values.forEach { it.hasBandit = (it == hex) }
     /**
      * Move the bandit to a  hex
@@ -133,7 +134,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      * Gets a list of Nodes that settlements can be placed on. Settlements can only be placed on pre-existing roads.
      * <color> The Player's color
      */
-    fun getValidSettlementSpots(color: String): List<Node> =
+    open fun getValidSettlementSpots(color: String): List<Node> =
             synchronized(this) {
                 allNodes().filter { n -> hasTouchingRoad(n, color) && is2AwayFromCity(n) && ! n.hasCity() }
             }
@@ -155,7 +156,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
      * This is used during setup when players can only place a road touching the
      * settlement they just placed.
      */
-    fun getValidRoadSpots(road_color: String, touching_node: Node? = null): List<Edge> {
+    open fun getValidRoadSpots(road_color: String, touching_node: Node? = null): List<Edge> {
         synchronized(this) {
             var result: List<Edge> = emptyList()
             allNodes().forEach { n ->
@@ -175,7 +176,7 @@ open class Board(val should_enforce_bandit: Boolean = true) {
     }
 
     /** Get all the valid spots to place a city. */
-    fun getValidCitySpots(color: String): List<Node> {
+    open fun getValidCitySpots(color: String): List<Node> {
         synchronized(this) {
             return allNodes().filter { node ->
                 node.city?.let { city ->

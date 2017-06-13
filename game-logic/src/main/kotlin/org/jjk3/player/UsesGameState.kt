@@ -20,7 +20,7 @@ abstract class UsesGameState {
     private var game_state: GameState = GameState.Waiting
     private val state_mutex = Object()
 
-    var state: GameState
+    open var state: GameState
         get() {
             return synchronized(state_mutex) {
                 game_state

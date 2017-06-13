@@ -255,7 +255,7 @@ open class Admin(
         }
     }
 
-    fun validateQuote(quote: Quote): Unit {
+    open fun validateQuote(quote: Quote): Unit {
         if (quote.bidder != null) {
             val player = getPlayer(quote.bidder.color !!) !!
             if (player.countResources(quote.giveType) < quote.giveNum) {

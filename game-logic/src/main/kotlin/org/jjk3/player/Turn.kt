@@ -23,11 +23,12 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
         Other
     }
 
-    private var allQuotes = emptyList<Quote>()
+    protected var allQuotes = emptyList<Quote>()
     fun observers(consumer: (GameObserver) -> Unit) = admin.observers.forEach { consumer.invoke(it) }
+    open internal fun getDiceRoll() = NormalDiceRoll()
     open fun rollDice(): DiceRoll {
         assertState(TurnState.Active)
-        val roll = NormalDiceRoll()
+        val roll = getDiceRoll()
         observers { it.playerRolled(player.ref(), roll) }
         if (roll.sum() == 7) {
             makePlayersDiscardIfNecessary()
@@ -50,13 +51,13 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
     }
 
     protected fun makePlayerMoveBandit(player: Player) {
-        board.tiles.values.find(Hex::hasBandit)?.let { currentBanditHex ->
-            val h = player.moveBandit(currentBanditHex.coords)
+        board.findBandit()?.let { hexWithBandit ->
+            val h = player.moveBandit(hexWithBandit.coords)
             board.getHex(h).let { moveBandit(it.coords) }
         }
     }
 
-    protected  fun makePlayersDiscardIfNecessary() {
+    protected fun makePlayersDiscardIfNecessary() {
         // Each player must first get rid of half their cards if they more than 7
         admin.players.forEach { p ->
             val resourceCards = p.resourceCards()
@@ -135,10 +136,6 @@ open class Turn(val admin: Admin, val player: Player, val board: Board) : HasTur
             takeRandomCard(playerToTakeFrom)
             observers { it.playerStoleCard(player.ref(), playerToTakeFrom, 1) }
         }
-    }
-
-    fun receivedQuote(quote: Quote): Unit {
-        allQuotes += quote
     }
 
     open fun placeRoad(edgeCoordinate: EdgeCoordinate) {
