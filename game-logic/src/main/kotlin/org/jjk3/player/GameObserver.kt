@@ -1,6 +1,8 @@
 package org.jjk3.player
 
-import org.jjk3.core.*
+import org.jjk3.board.*
+import org.jjk3.gameplay.DiceRoll
+import org.jjk3.gameplay.Turn
 
 /**
  * Observer interface to watch the game.

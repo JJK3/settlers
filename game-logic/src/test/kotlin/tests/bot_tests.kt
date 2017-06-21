@@ -1,10 +1,10 @@
-import org.jjk3.core.StandardBoard
-import org.jjk3.core.Util
+import org.jjk3.board.StandardBoard
+import org.jjk3.board.Util
 import org.junit.Test
-import org.jjk3.player.Admin
+import org.jjk3.gameplay.Admin
 import org.jjk3.player.Player
-import org.jjk3.player.RandomPlayer
-import org.jjk3.player.SinglePurchasePlayer
+import org.jjk3.bots.RandomPlayer
+import org.jjk3.bots.SinglePurchasePlayer
 
 class BotTest {
 
@@ -37,8 +37,8 @@ class BotTest {
     fun test_random_bot_game(): Unit {
         val b = StandardBoard()
         val a = Admin(b, 2, 10)
-        val p1 = RandomPlayer(a)
-        val p2 = RandomPlayer(a)
+        val p1 = SinglePurchasePlayer(a)
+        val p2 = SinglePurchasePlayer(a)
 //        val p3 = RandomPlayer("Player3", "", a, 4, 5, 15)
 //        val p4 = RandomPlayer("SinglePurchasePlayer", "", a, 4, 5, 15)
         listOf(p1, p2).forEach { a.register(it) }

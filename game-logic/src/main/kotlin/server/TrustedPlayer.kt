@@ -1,10 +1,10 @@
 package server
 
-import org.jjk3.core.*
+import org.jjk3.board.*
 import org.jjk3.player.Player
 import org.jjk3.player.PlayerReference
-import org.jjk3.player.Quote
-import org.jjk3.player.Turn
+import org.jjk3.gameplay.Quote
+import org.jjk3.gameplay.Turn
 
 
 class TrustedPlayer(val original_player: Player) : Player() {

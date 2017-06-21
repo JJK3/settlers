@@ -1,7 +1,9 @@
 package org.jjk3.player
 
-import org.jjk3.core.*
-import org.jjk3.core.Resource.*
+import org.jjk3.board.*
+import org.jjk3.board.Resource.*
+import org.jjk3.gameplay.Quote
+import org.jjk3.gameplay.Turn
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before

@@ -2,8 +2,9 @@ package org.jjk3.player
 
 import junit.framework.Assert.assertEquals
 import junit.framework.Assert.fail
-import org.jjk3.core.*
-import org.jjk3.core.Resource.*
+import org.jjk3.board.*
+import org.jjk3.board.Resource.*
+import org.jjk3.gameplay.*
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test

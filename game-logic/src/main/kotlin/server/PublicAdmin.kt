@@ -1,8 +1,12 @@
 package server
 
-import org.jjk3.core.Board
-import org.jjk3.core.pick_random
-import org.jjk3.core.remove_random
+import org.jjk3.board.Board
+import org.jjk3.board.pickRandom
+import org.jjk3.board.remove_random
+import org.jjk3.bots.Bot
+import org.jjk3.bots.SinglePurchasePlayer
+import org.jjk3.gameplay.Admin
+import org.jjk3.gameplay.Turn
 import org.jjk3.player.*
 import java.io.Serializable
 import java.util.concurrent.Executors
@@ -56,7 +60,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
                     }
                 }
                 if (trustedPlayer.color == null) {
-                    val color = bot_colors.pick_random()!!
+                    val color = bot_colors.pickRandom()!!
                     trustedPlayer.color = color
                     taking_over_bot = getPlayer(color)
                 }
