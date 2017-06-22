@@ -98,9 +98,9 @@ open class MockPlayer() : Player() {
         return ref()
     }
 
-    override fun getUserQuotes(player_reference: PlayerReference, wantList: List<Resource>,
-                               giveList: List<Resource>): List<Quote> {
-        return emptyList()
+    override fun getUserQuotes(player_reference: PlayerReference, wantList: Set<Resource>,
+                               giveList: Set<Resource>): Set<Quote> {
+        return emptySet()
     }
 
 }

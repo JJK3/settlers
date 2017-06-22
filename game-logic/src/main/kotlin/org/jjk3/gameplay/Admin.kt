@@ -224,7 +224,7 @@ open class Admin(
     * Optionally takes a block that iterates through each quote as they come
     * [player] The player asking for quotes
     */
-    open fun getQuotes(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
+    open fun getQuotes(player: Player, wantList: Set<Resource>, giveList: Set<Resource>): Set<Quote> {
         var result = getQuotesFromBank(player, wantList, giveList)
 
         //Add user quotes
@@ -247,9 +247,9 @@ open class Admin(
     }
 
     /** Returns a List of Quote objects from the bank for a specific player */
-    fun getQuotesFromBank(player: Player, wantList: List<Resource>, giveList: List<Resource>): List<Quote> {
+    fun getQuotesFromBank(player: Player, wantList: Set<Resource>, giveList: Set<Resource>): Set<Quote> {
         //start with the bank's 4:1 offer
-        var result: List<Quote> = emptyList()
+        var result: Set<Quote> = emptySet()
 
         wantList.forEach { w: Resource ->
             giveList.forEach { g: Resource ->
@@ -264,11 +264,11 @@ open class Admin(
                 }
             }
         }
-        result = result.filterNot { q -> player.countResources(q.receiveType) < q.receiveNum }.distinct()
+        result = result.filterNot { q -> player.countResources(q.receiveType) < q.receiveNum }.toSet()
 
         //Remove any redundant quotes
         //i.e. if result has a 2:1 quote, we don't need a 4:1 quote
-        return result.filterNot { q -> result.any { it.isBetterQuote(q) } }
+        return result.filterNot { q -> result.any { it.isBetterQuote(q) } }.toSet()
     }
 
     fun giveSetupTurn(player: Player): Turn = giveTurn(SetupTurn(this, player, board), player)

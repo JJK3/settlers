@@ -1,16 +1,12 @@
 package org.jjk3.board
 
 import org.apache.log4j.Logger
-import org.jjk3.gameplay.Admin
-import org.jjk3.gameplay.Turn
 import java.util.*
 
 interface Card
 /** Base class of a card that does something */
 abstract class ActionCard : Card {
     val log: Logger = Logger.getLogger(javaClass)
-    /* Use this card on a turn */
-    abstract fun use(turn: Turn)
 
     /** Are the card's actions finished? */
     var isDone = true
@@ -30,60 +26,19 @@ abstract class DevelopmentCard : ActionCard(), Purchaseable {
 /**
  * Allows a player to move the bandit. This can be played before the dice are rolled.
  */
-class SoldierCard : DevelopmentCard() {
-    override fun use(turn: Turn) {
-        val old_bandit_hex: Hex = turn.admin.board.tiles.values.find(Hex::hasBandit) ?: throw IllegalArgumentException(
-                "Could not find hex with bandit")
-        val banitHex = turn.player.moveBandit(old_bandit_hex.coords)
-        val actualHex: Hex = turn.admin.board.getHex(banitHex)
-        turn.moveBandit(actualHex.coords)
-    }
-}
+class SoldierCard : DevelopmentCard()
 
 /** Allows a player to build 2 roads in his turn */
-class RoadBuildingCard : DevelopmentCard() {
-    override fun use(turn: Turn) {
-        turn.player.giveFreeRoads(2)
-        log.debug("Giving 2 roads to ${turn.player}: ${turn.player.freeRoads()}")
-    }
-}
+class RoadBuildingCard : DevelopmentCard()
 
 /** Allows a user to steal a specific resource from all other players */
-class ResourceMonopolyCard : DevelopmentCard() {
-    override fun use(turn: Turn) {
-        val res = turn.player.selectResourceCards(Resource.values().toList(), 1,
-                Admin.SELECT_CARDS_RES_MONOPOLY).first()
-
-        turn.admin.otherPlayers(turn.player.ref()).forEach { p ->
-            val cards: List<ResourceCard> = (1..p.countResources(res)).map { ResourceCard(res) }
-            if (cards.isEmpty()) {
-                log.info("${turn.player} is trying to take $res cards from $p, but $p has none.")
-            } else {
-                log.info("${turn.player} is taking $cards from $p")
-                p.takeCards(cards, Turn.ReasonToTakeCards.Other)
-                turn.player.giveCards(cards)
-            }
-        }
-    }
-}
+class ResourceMonopolyCard : DevelopmentCard()
 
 /** Lets a user select 2 resources and plus them to his hand */
-class YearOfPlentyCard : DevelopmentCard() {
-    override fun use(turn: Turn) {
-        val res = turn.player.selectResourceCards(Resource.values().toList(), 2, Admin.SELECT_CARDS_YEAR_OF_PLENTY)
-        if (res.size != 2) {
-            throw RuleException("selectResourceCards expected 2 cards but was " + res)
-        }
-        turn.player.giveCards(res.map(::ResourceCard))
-    }
-}
+class YearOfPlentyCard : DevelopmentCard()
 
 /** Lets a user select 2 resources and plus them to his hand */
-class VictoryPointCard : DevelopmentCard() {
-    override fun use(turn: Turn) {
-
-    }
-}
+class VictoryPointCard : DevelopmentCard()
 
 open class Bag<A>(protected val items: List<A> = emptyList()) {
     private val rand = Random(System.currentTimeMillis())
@@ -91,7 +46,7 @@ open class Bag<A>(protected val items: List<A> = emptyList()) {
     fun isEmpty() = size() == 0
     operator fun plus(item: A): Bag<A> = Bag(items + item)
     fun removeRandom(): Pair<Bag<A>, A> {
-        if (!items.isEmpty()) {
+        if (! items.isEmpty()) {
             val i = rand.nextInt(items.size)
             return pick_and_remove(i)
         }

@@ -72,8 +72,8 @@ abstract class Player(val boardObserver: BoardObserver = BoardObserver()) : Game
     }
 
     /** This should be overridden in the implementations */
-    abstract fun getUserQuotes(player_reference: PlayerReference, wantList: List<Resource>,
-                               giveList: List<Resource>): List<Quote>
+    abstract fun getUserQuotes(playerRef: PlayerReference, wantList: Set<Resource>,
+                               giveList: Set<Resource>): Set<Quote>
 
     /**
      * Tell this player to move the bandit

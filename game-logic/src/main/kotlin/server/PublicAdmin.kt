@@ -22,7 +22,7 @@ class PublicAdmin(board: Board, max_players: Int, max_points: Int = 10, turn_tim
                   game_timeout: Int = 1800) : Admin(board, max_players, max_points, turn_timeout_seconds,
         game_timeout) {
 
-    private fun isBot(p: Player) = p is Bot || (p is TrustedPlayer && p.original_player is Bot)
+    private fun isBot(p: Player) = p is Bot || (p is TrustedPlayer && p.original is Bot)
     private fun bots() = players.filter { isBot(it) }
     override fun register(registrant: Player): Unit {
         //Players can only register before the game starts or if there are bots playing.
